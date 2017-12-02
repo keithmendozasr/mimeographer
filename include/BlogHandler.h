@@ -16,6 +16,7 @@
 #pragma once
 
 #include <proxygen/httpserver/RequestHandler.h>
+#include <proxygen/httpserver/ResponseBuilder.h>
 
 #include <regex>
 #include <string>
@@ -39,6 +40,11 @@ public:
 
 private:
     std::string staticIdentifier = {"/static/"};
+    std::unique_ptr<folly::IOBuf> response;
+
+    void buildPageHeader();
+
+    void buildPageTrailer();
 };
 
 }
