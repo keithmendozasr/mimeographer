@@ -23,7 +23,7 @@
 
 namespace mimeographer {
 
-class BlogHandler : public proxygen::RequestHandler {
+class PrimaryHandler : public proxygen::RequestHandler {
 public:
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
             noexcept override;
@@ -39,7 +39,6 @@ public:
     void onError(proxygen::ProxygenError err) noexcept override;
 
 private:
-    std::string staticIdentifier = {"/static/"};
     std::unique_ptr<folly::IOBuf> response;
 
     void buildPageHeader();

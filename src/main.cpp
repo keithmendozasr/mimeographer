@@ -17,7 +17,7 @@
 #include <proxygen/httpserver/HTTPServer.h>
 #include <proxygen/httpserver/RequestHandlerFactory.h>
 
-#include "BlogHandler.h"
+#include "PrimaryHandler.h"
 
 using namespace mimeographer;
 using namespace proxygen;
@@ -34,16 +34,16 @@ DEFINE_string(ip, "localhost", "IP/Hostname to bind to");
 DEFINE_int32(threads, 0, "Number of threads to listen on. Numbers <= 0 "
              "will use the number of cores on this machine.");
 
-namespace {
+namespace mimeographer {
 
-class BlogHandlerFactory : public RequestHandlerFactory {
+class MimeographerHandlerFactory : public RequestHandlerFactory {
 public:
     void onServerStart(folly::EventBase* /*evb*/) noexcept override {}
 
     void onServerStop() noexcept override {}
 
     RequestHandler* onRequest(RequestHandler*, HTTPMessage*) noexcept override {
-        return new BlogHandler();
+        return new PrimaryHandler();
     }
 };
 
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     options.shutdownOn = {SIGINT, SIGTERM};
     options.enableContentCompression = false;
     options.handlerFactories = RequestHandlerChain()
-            .addThen<BlogHandlerFactory>()
+            .addThen<MimeographerHandlerFactory>()
             .build();
     options.h2cEnabled = true;
 

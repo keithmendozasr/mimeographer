@@ -19,14 +19,14 @@
 
 #include <glog/logging.h>
 
-#include "BlogHandler.h"
+#include "PrimaryHandler.h"
 
 using namespace std;
 using namespace proxygen;
 using namespace folly;
 
 namespace mimeographer {
-    void BlogHandler::buildPageHeader() {
+    void PrimaryHandler::buildPageHeader() {
         static const string templateHeader = 
             "<!doctype html>\n"
 			"<html lang=\"en\">\n"
@@ -67,7 +67,7 @@ namespace mimeographer {
         response = std::move(IOBuf::copyBuffer(templateHeader.c_str(), templateHeader.size()));
     }
 
-    void BlogHandler::buildPageTrailer() {
+    void PrimaryHandler::buildPageTrailer() {
         // NOTE: If the issue is caused by not calling buildPageHeader() during
         // development it'll be caught by the DFATAL call. In production, the
         // issue could be caused by memory issues.
@@ -98,7 +98,7 @@ namespace mimeographer {
         response->prependChain(std::move(IOBuf::copyBuffer(templateTail.c_str(), templateTail.size())));
     }
 
-    void BlogHandler::onRequest(unique_ptr<HTTPMessage> headers) noexcept {
+    void PrimaryHandler::onRequest(unique_ptr<HTTPMessage> headers) noexcept {
         LOG(INFO) << "Handling request from " 
             << headers->getClientIP() << ":"
             << headers->getClientPort()
@@ -108,7 +108,7 @@ namespace mimeographer {
         VLOG(1) << "field2 cookie " << headers->getCookie("field2").toString();
     }
 
-    void BlogHandler::onEOM() noexcept {
+    void PrimaryHandler::onEOM() noexcept {
         try {
             buildPageHeader();
 
@@ -140,12 +140,12 @@ namespace mimeographer {
         }
     }
 
-    void BlogHandler::requestComplete() noexcept {
+    void PrimaryHandler::requestComplete() noexcept {
         LOG(INFO) << "Done processing";
         delete this;
     }
 
-    void BlogHandler::onError(ProxygenError ) noexcept {
+    void PrimaryHandler::onError(ProxygenError ) noexcept {
         LOG(INFO) << "Error encountered while processing request";
         delete this;
     }
