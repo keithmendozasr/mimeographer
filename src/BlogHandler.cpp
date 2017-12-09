@@ -104,6 +104,8 @@ namespace mimeographer {
             << headers->getClientPort()
             << " " << headers->getMethodString()
             << " " << headers->getPath();
+        VLOG(1) << "field1 cookie " << headers->getCookie("field1").toString();
+        VLOG(1) << "field2 cookie " << headers->getCookie("field2").toString();
     }
 
     void BlogHandler::onEOM() noexcept {
@@ -120,6 +122,8 @@ namespace mimeographer {
             ResponseBuilder(downstream_)
                 .status(200, "OK")
                 .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
+                .header("Set-Cookie", "field1=asdf")
+                .header("Set-Cookie", "field2=dddd")
                 .body(std::move(response))
                 .sendWithEOM();
         }
