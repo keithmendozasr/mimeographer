@@ -64,7 +64,7 @@ namespace mimeographer {
 
         // NOTE: Any other sections of the page should be its own IOBuf and
         // appended to response outside of this section
-        response = std::move(IOBuf::copyBuffer(templateHeader.c_str(), templateHeader.size()));
+        response = std::move(IOBuf::copyBuffer(templateHeader));
     }
 
     void PrimaryHandler::buildPageTrailer() {
@@ -95,7 +95,7 @@ namespace mimeographer {
                 "crossorigin=\"anonymous\"></script>\n"
             "</body>\n"
             "</html>";
-        response->prependChain(std::move(IOBuf::copyBuffer(templateTail.c_str(), templateTail.size())));
+        response->prependChain(std::move(IOBuf::copyBuffer(templateTail)));
     }
 
     void PrimaryHandler::onRequest(unique_ptr<HTTPMessage> headers) noexcept {
