@@ -52,12 +52,13 @@ namespace mimeographer {
             "<span class=\"navbar-toggler-icon\"></span></button>"
             "<div class=\"collapse navbar-collapse\" id=\"navbarNav\">"
                 "<div class=\"navbar-nav\">"
+                    "<a class=\"nav-item nav-link\" href=\"/about\">Archives</a>"
                     "<a class=\"nav-item nav-link\" href=\"/about\">About</a>"
                 "</div>"
             "</div>"
             "</nav>"
 
-            // Opening main container
+            // Opening display container
             "<div class=\"container-fluid\">\n"
             "<div class=\"row\">\n"
             "<!-- BEGIN PAGE CONTENT -->\n"; // Main page row
@@ -67,16 +68,41 @@ namespace mimeographer {
         response = std::move(IOBuf::copyBuffer(templateHeader));
     }
 
+    void PrimaryHandler::buildContent() {
+        if(response == nullptr) {
+            LOG(DFATAL) << "response IOBuf not initialized when "
+                << __PRETTY_FUNCTION__ << " called";
+            return;
+        }
+
+        static const string templateOpening = "<div class=\"col col-10 offset-1\">\n";
+        static const string templateClosing = "</div>\n";
+
+        response->prependChain(std::move(IOBuf::copyBuffer(templateOpening)));
+        for(int i=0; i<10; i++) {
+            response->prependChain(std::move(IOBuf::copyBuffer("<h1><a href=\"#\">Title</a></h1><p>"
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vesti"
+                "bulum finibus pharetra eros, at tincidunt quam laoreet vel. Cu"
+                "rabitur lobortis dapibus sapien id viverra. Cras nec diam non "
+                "ante vehicula tincidunt. Ut molestie metus mauris, vel vulputa"
+                "te metus venenatis eu. Cras vitae pellentesque arcu. Aenean et "
+                "agna ante. Curabitur porta, felis porttitor efficitur viverra,"
+                "ante orci fringilla magna, vel tristique purus augue vitae ligula."
+                "</p>"
+            )));
+        }
+        response->prependChain(std::move(IOBuf::copyBuffer(templateClosing)));
+    }
+
     void PrimaryHandler::buildPageTrailer() {
         // NOTE: If the issue is caused by not calling buildPageHeader() during
         // development it'll be caught by the DFATAL call. In production, the
         // issue could be caused by memory issues.
         if(response == nullptr) {
             LOG(DFATAL) << "response IOBuf not initialized when " 
-                << __PRETTY_FUNCTION__ 
-                << " called";
+                << __PRETTY_FUNCTION__ << " called";
 
-            response = std::move(IOBuf::create(0));
+            return;
         }
 
         // NOTE: This section is intended to close out the page itself. 
@@ -111,11 +137,7 @@ namespace mimeographer {
     void PrimaryHandler::onEOM() noexcept {
         try {
             buildPageHeader();
-
-            // Do any other request handling here
-            response->prependChain(std::move(IOBuf::copyBuffer("<div class=\"col\"><p>Hello there</p>\n", sizeof("<div class=\"col\"><p>Hello there</p>\n"))));
-            response->prependChain(std::move(IOBuf::copyBuffer("<p>Here's another</p></div>\n", sizeof("<p>Here's another</p></div>\n"))));
-
+            buildContent();
             buildPageTrailer();
 
             // Send the response that everything worked out well
