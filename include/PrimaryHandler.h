@@ -21,17 +21,11 @@
 #include <regex>
 #include <string>
 
-namespace mimeographer {
+namespace mimeographer 
+{
 
-class PrimaryHandler : public proxygen::RequestHandler {
-public:
-    void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
-            noexcept override;
-    void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override {};
-    void onEOM() noexcept override;
-    void onUpgrade(proxygen::UpgradeProtocol proto) noexcept override {};
-    void requestComplete() noexcept override;
-    void onError(proxygen::ProxygenError err) noexcept override;
+class PrimaryHandler : public proxygen::RequestHandler 
+{
 
 private:
     std::unique_ptr<folly::IOBuf> response;
@@ -41,6 +35,14 @@ private:
     void buildContent();
     void buildPageTrailer();
 
+public:
+    void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
+            noexcept override;
+    void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override {};
+    void onEOM() noexcept override;
+    void onUpgrade(proxygen::UpgradeProtocol proto) noexcept override {};
+    void requestComplete() noexcept override;
+    void onError(proxygen::ProxygenError err) noexcept override;
 };
 
 }

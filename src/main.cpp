@@ -34,12 +34,14 @@ DEFINE_string(ip, "localhost", "IP/Hostname to bind to");
 DEFINE_int32(threads, 0, "Number of threads to listen on. Numbers <= 0 "
              "will use the number of cores on this machine.");
 
-namespace mimeographer {
+namespace mimeographer 
+{
 
-class MimeographerHandlerFactory : public RequestHandlerFactory {
+class MimeographerHandlerFactory : public RequestHandlerFactory 
+{
+
 public:
     void onServerStart(folly::EventBase* /*evb*/) noexcept override {}
-
     void onServerStop() noexcept override {}
 
     RequestHandler* onRequest(RequestHandler*, HTTPMessage*) noexcept override {
@@ -49,15 +51,18 @@ public:
 
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) 
+{
     folly::init(&argc, &argv, true);
 
-    std::vector<HTTPServer::IPConfig> IPs = {
-        {SocketAddress(FLAGS_ip, FLAGS_http_port, true), Protocol::HTTP},
-        {SocketAddress(FLAGS_ip, FLAGS_h2_port, true), Protocol::HTTP2},
+    std::vector<HTTPServer::IPConfig> IPs = 
+    {
+        { SocketAddress(FLAGS_ip, FLAGS_http_port, true), Protocol::HTTP },
+        { SocketAddress(FLAGS_ip, FLAGS_h2_port, true), Protocol::HTTP2 },
     };
 
-    if (FLAGS_threads <= 0) {
+    if (FLAGS_threads <= 0) 
+    {
         FLAGS_threads = sysconf(_SC_NPROCESSORS_ONLN);
         CHECK_GT(FLAGS_threads, 0);
     }
@@ -68,17 +73,15 @@ int main(int argc, char* argv[]) {
     options.shutdownOn = {SIGINT, SIGTERM};
     options.enableContentCompression = false;
     options.handlerFactories = RequestHandlerChain()
-            .addThen<MimeographerHandlerFactory>()
-            .build();
+        .addThen<MimeographerHandlerFactory>()
+        .build();
     options.h2cEnabled = true;
 
     HTTPServer server(std::move(options));
     server.bind(IPs);
 
     // Start HTTPServer mainloop in a separate thread
-    std::thread t([&] () {
-        server.start();
-    });
+    std::thread t([&] () { server.start(); });
 
     t.join();
     return 0;
