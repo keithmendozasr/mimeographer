@@ -16,6 +16,7 @@
 
 #include <string>
 #include <exception>
+#include <utility>
 
 #include <glog/logging.h>
 
@@ -27,6 +28,33 @@ using namespace folly;
 
 namespace mimeographer 
 {
+
+void PrimaryHandler::buildFrontPage()
+{
+    DBConn conn(config.dbUser, config.dbPass, config.dbHost, config.dbName,
+        config.dbPort);
+    VLOG(1) << "DB connection established";
+    string data;
+    for(auto article : conn.getHeadlines())
+    {
+        auto line = string("<h1><a href=\"/article/") + article[0] + "\">"
+            + article[1] + "</a></h1>\n<p>"
+            + article[2] + "</p>\n" ;
+        if((data.capacity() - data.size() - line.size()) < 0)
+        {
+            VLOG(2) << "Loading existing list to buffer";
+            response->prependChain(move(IOBuf::copyBuffer(data)));
+            data = line;
+        }
+        else
+        {
+            VLOG(2) << "Append line to data buffer";
+            data = data + line;
+        }
+    }
+    response->prependChain(move(IOBuf::copyBuffer(data)));
+    VLOG(1) << "Front page data processed";
+}
 
 void PrimaryHandler::buildPageHeader() 
 {
@@ -84,18 +112,14 @@ void PrimaryHandler::buildContent()
     static const string templateClosing = "</div>\n";
 
     response->prependChain(std::move(IOBuf::copyBuffer(templateOpening)));
-    for(int i=0; i<10; i++) 
+
+    auto path = headers->getPath();
+    if(path == "/")
+        buildFrontPage();
+    else
     {
-        response->prependChain(std::move(IOBuf::copyBuffer("<h1><a href=\"#\">Title</a></h1><p>"
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vesti"
-            "bulum finibus pharetra eros, at tincidunt quam laoreet vel. Cu"
-            "rabitur lobortis dapibus sapien id viverra. Cras nec diam non "
-            "ante vehicula tincidunt. Ut molestie metus mauris, vel vulputa"
-            "te metus venenatis eu. Cras vitae pellentesque arcu. Aenean et "
-            "agna ante. Curabitur porta, felis porttitor efficitur viverra,"
-            "ante orci fringilla magna, vel tristique purus augue vitae ligula."
-            "</p>"
-        )));
+        LOG(INFO) << path << "not handled";
+        throw Status404();
     }
     response->prependChain(std::move(IOBuf::copyBuffer(templateClosing)));
 }
@@ -134,13 +158,14 @@ void PrimaryHandler::buildPageTrailer()
 
 void PrimaryHandler::onRequest(unique_ptr<HTTPMessage> headers) noexcept 
 {
+    this->headers = move(headers);
     LOG(INFO) << "Handling request from " 
-        << headers->getClientIP() << ":"
-        << headers->getClientPort()
-        << " " << headers->getMethodString()
-        << " " << headers->getPath();
-    VLOG(1) << "field1 cookie " << headers->getCookie("field1").toString();
-    VLOG(1) << "field2 cookie " << headers->getCookie("field2").toString();
+        << this->headers->getClientIP() << ":"
+        << this->headers->getClientPort()
+        << " " << this->headers->getMethodString()
+        << " " << this->headers->getPath();
+    VLOG(1) << "field1 cookie " << this->headers->getCookie("field1").toString();
+    VLOG(1) << "field2 cookie " << this->headers->getCookie("field2").toString();
 }
 
 void PrimaryHandler::onEOM() noexcept 
@@ -158,6 +183,21 @@ void PrimaryHandler::onEOM() noexcept
             .header("Set-Cookie", "field1=asdf")
             .header("Set-Cookie", "field2=dddd")
             .body(std::move(response))
+            .sendWithEOM();
+    }
+    catch (const Status404 &)
+    {
+        if(response == nullptr)
+            LOG(DFATAL) << "response IOBuf not initialized at Status404 handler";
+        else
+            response->prependChain(move(IOBuf::copyBuffer(
+                "The path you provided doesn't exists."
+            )));
+        buildPageTrailer();
+        ResponseBuilder(downstream_)
+            .status(404, "File Not Found")
+            .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
+            .body(move(response))
             .sendWithEOM();
     }
     catch (const exception &e) 

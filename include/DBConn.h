@@ -18,6 +18,8 @@
 #include <string>
 #include <exception>
 #include <memory>
+#include <vector>
+#include <array>
 
 #include <glog/logging.h>
 #include <gtest/gtest_prod.h>
@@ -60,6 +62,20 @@ private:
     ////
     const std::string urlEncode(const std::string &str) const;
 
+    class PGresultCleaner
+    {
+    public:
+        void operator()(PGresult *ptr)
+        {
+            if(ptr)
+            {
+                VLOG(2) << "Clean PGresult";
+                PQclear(ptr);
+            }
+        }
+    };
+    std::unique_ptr<PGresult, PGresultCleaner> execQuery(const std::string &query) const;
+
 public:
     ////
     /// Constructor
@@ -73,6 +89,11 @@ public:
         const unsigned short port=5432);
 
     ////
+    // Return available articles
+    ////
+    std::vector<std::array<std::string, 3>> getHeadlines() const;
+
+    ////
     // Exception class for DBConn
     ////
     class DBError : public std::exception
@@ -83,9 +104,9 @@ public:
     public:
         ////
         /// Constructor
-        /// \param conn weak_ptr to PGconn that triggered the error
+        /// \param msg Error message
         ////
-        DBError(const PGconn *conn);
+        DBError(const std::string &msg) : msg(msg) {};
 
         const char *what() const noexcept override;
     };

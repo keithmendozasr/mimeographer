@@ -20,6 +20,10 @@
 
 #include <regex>
 #include <string>
+#include <exception>
+
+#include "Config.h"
+#include "DBConn.h"
 
 namespace mimeographer 
 {
@@ -28,14 +32,28 @@ class PrimaryHandler : public proxygen::RequestHandler
 {
 
 private:
+    class Status404 : public std::exception
+    {
+    public:
+        const char * what() const noexcept
+        {
+            return "File not found";
+        }
+    };
+
     std::unique_ptr<folly::IOBuf> response;
     std::unique_ptr<proxygen::HTTPMessage> headers;
+
+    void buildFrontPage();
 
     void buildPageHeader();
     void buildContent();
     void buildPageTrailer();
 
+    const Config &config;
 public:
+    PrimaryHandler(const Config &config) : config(config) {};
+
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
             noexcept override;
     void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override {};

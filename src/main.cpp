@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <map>
+
 #include <folly/init/Init.h>
 #include <proxygen/httpserver/HTTPServer.h>
 #include <proxygen/httpserver/RequestHandlerFactory.h>
@@ -29,23 +31,39 @@ using folly::SocketAddress;
 using Protocol = HTTPServer::Protocol;
 
 DEFINE_int32(http_port, 11000, "Port to listen on with HTTP protocol");
-DEFINE_int32(h2_port, 11002, "Port to listen on with HTTP/2 protocol");
 DEFINE_string(ip, "localhost", "IP/Hostname to bind to");
 DEFINE_int32(threads, 0, "Number of threads to listen on. Numbers <= 0 "
              "will use the number of cores on this machine.");
+DEFINE_string(dbHost, "localhost", "DB server host");
+DEFINE_string(dbUser, "", "DB login");
+DEFINE_string(dbPass, "", "DB password");
+DEFINE_string(dbName, "mimeographer", "Database name");
+DEFINE_int32(dbPort, 5432, "DB server port");
 
 namespace mimeographer 
 {
 
 class MimeographerHandlerFactory : public RequestHandlerFactory 
 {
+private:
+    const Config &config;
 
 public:
-    void onServerStart(folly::EventBase* /*evb*/) noexcept override {}
-    void onServerStop() noexcept override {}
+    MimeographerHandlerFactory(const Config &config) : config(config) {}
 
-    RequestHandler* onRequest(RequestHandler*, HTTPMessage*) noexcept override {
-        return new PrimaryHandler();
+    void onServerStart(folly::EventBase* /*evb*/) noexcept override
+    {
+        LOG(INFO) << "Server started";
+    }
+
+    void onServerStop() noexcept override 
+    {
+        LOG(INFO) << "Server stopped";
+    }
+
+    RequestHandler* onRequest(RequestHandler*, HTTPMessage*) noexcept override
+    {
+        return new PrimaryHandler(config);
     }
 };
 
@@ -57,8 +75,7 @@ int main(int argc, char* argv[])
 
     std::vector<HTTPServer::IPConfig> IPs = 
     {
-        { SocketAddress(FLAGS_ip, FLAGS_http_port, true), Protocol::HTTP },
-        { SocketAddress(FLAGS_ip, FLAGS_h2_port, true), Protocol::HTTP2 },
+        { SocketAddress(FLAGS_ip, FLAGS_http_port, true), Protocol::HTTP }
     };
 
     if (FLAGS_threads <= 0) 
@@ -67,13 +84,21 @@ int main(int argc, char* argv[])
         CHECK_GT(FLAGS_threads, 0);
     }
 
+    Config config(
+        FLAGS_dbHost,
+        FLAGS_dbUser,
+        FLAGS_dbPass,
+        FLAGS_dbName,
+        FLAGS_dbPort
+    );
+
     HTTPServerOptions options;
     options.threads = static_cast<size_t>(FLAGS_threads);
     options.idleTimeout = std::chrono::milliseconds(60000);
     options.shutdownOn = {SIGINT, SIGTERM};
     options.enableContentCompression = false;
     options.handlerFactories = RequestHandlerChain()
-        .addThen<MimeographerHandlerFactory>()
+        .addThen<MimeographerHandlerFactory>(config)
         .build();
     options.h2cEnabled = true;
 
