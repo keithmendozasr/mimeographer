@@ -17,6 +17,7 @@
 #include <sstream>
 #include <cctype>
 #include <iomanip>
+#include <sstream>
 
 #include <glog/logging.h>
 
@@ -27,7 +28,7 @@ using namespace std;
 namespace mimeographer 
 {
 
-const string DBConn::urlEncode(const std::string &str) const
+const string DBConn::urlEncode(const string &str) const
 {
     ostringstream buf;
     buf.fill('0');
@@ -41,21 +42,51 @@ const string DBConn::urlEncode(const std::string &str) const
             buf << '%' << uppercase << setw(2) << int(ch) << nouppercase;
     }
 
-    VLOG(3) << __PRETTY_FUNCTION__ << "\tURL-encoded string to return: "
+    VLOG(2) << "URL-encoded string to return: "
         << buf.str();
 
-    return std::move(buf.str());
+    return move(buf.str());
 }
 
-DBConn::DBConn(const std::string &username, const std::string &password,
-    const std::string &dbName, const int port) :
-    username(username), password(password), dbName(dbName), port(port)
+DBConn::DBConn(const string &username, const string &password,
+    const string &dbHost, const string &dbName, const unsigned short port)
 {
-    VLOG(3) << __PRETTY_FUNCTION__ << " called\n"
-        << "Username: " << this->username
+    VLOG(2) << __PRETTY_FUNCTION__ << " called\n"
+        << "Username: " << username
         << "\nPassword: NOT PRINTED ON PURPOSE"
-        << "\ndbName: " << this->dbName
-        << "\nPort: " << this->port;
+        << "\ndbName: " << dbName
+        << "\nPort: " << port;
+
+    ostringstream URI;
+    URI << "postgresql://" << username << ":" << password << "@"
+        << dbHost << ":" << port << "/" << dbName 
+        << "?connect_timeout=30&application_name=mimeographer";
+
+    auto tmp = PQconnectdb(URI.str().c_str());
+    // Just in case we're out of memory
+    if(tmp == nullptr)
+    {
+        LOG(ERROR) << "Failed to allocate memory for PGconn object";
+        throw bad_alloc();
+    }
+
+    conn = unique_ptr<PGconn, PGconnCleaner>(tmp);
+
+    if(PQstatus(conn.get()) != CONNECTION_OK)
+        throw DBError(conn.get());
+
+    VLOG(1) << "DB connection established";
+}
+
+// TODO: Wrap this in a weak pointer or something
+DBConn::DBError::DBError(const PGconn *conn)
+{
+    msg = PQerrorMessage(conn);
+}
+
+const char *DBConn::DBError::what() const noexcept
+{
+    return msg.c_str();
 }
 
 }
