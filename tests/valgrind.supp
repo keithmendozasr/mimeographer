@@ -1,0 +1,63 @@
+{
+   crypto-malloc
+   Memcheck:Leak
+   fun:malloc
+   fun:CRYPTO_malloc
+}
+
+{
+   Gflag-new-alloc
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libgflags.so.2.1.2
+   ...
+}
+
+{
+   Gflag-malloc
+   Memcheck:Leak
+   fun:malloc
+   ...
+   obj:/usr/lib/x86_64-linux-gnu/libgflags.so.2.1.2
+   ...
+}
+
+{
+   libpq-malloc
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libpq.so.5.9
+}
+
+{
+   crypto-realloc
+   Memcheck:Leak
+   fun:realloc
+   fun:CRYPTO_realloc
+}
+
+{
+   folly
+   Memcheck:Leak
+   ...
+   fun:_*folly*
+   ...
+}
+
+{
+	proxygen-staticinit
+	Memcheck:Leak
+    ...
+    fun:__static_initialization_and_destruction_0
+    ...
+}
+
+{
+   proxygen::HTTPCondec::onMessgeComplete
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN8proxygen27HTTPTransactionEgressSMData4findENS0_5StateENS0_5EventE
+   ...
+   fun:_ZN8proxygen11HTTP1xCodec17onMessageCompleteEv
+}
