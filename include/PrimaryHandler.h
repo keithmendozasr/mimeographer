@@ -32,15 +32,6 @@ class PrimaryHandler : public proxygen::RequestHandler
 {
 
 private:
-    class Status404 : public std::exception
-    {
-    public:
-        const char * what() const noexcept
-        {
-            return "File not found";
-        }
-    };
-
     std::unique_ptr<folly::IOBuf> response;
     std::unique_ptr<proxygen::HTTPMessage> headers;
 

@@ -22,6 +22,7 @@
 #include <glog/logging.h>
 
 #include "PrimaryHandler.h"
+#include "HandlerError.h"
 
 using namespace std;
 using namespace proxygen;
@@ -81,7 +82,7 @@ void PrimaryHandler::buildArticlePage()
     else
     {
         LOG(WARNING) << "path didn't parse";
-        throw Status404();
+        throw HandlerError(404, "File not found");
     }
 }
 
@@ -134,7 +135,7 @@ void PrimaryHandler::buildContent()
     {
         LOG(DFATAL) << "response IOBuf not initialized when "
             << __PRETTY_FUNCTION__ << " called";
-        return;
+        throw HandlerError(500, "Internal error");
     }
 
     static const string templateOpening = "<div class=\"col col-10 offset-1\">\n";
@@ -157,7 +158,7 @@ void PrimaryHandler::buildContent()
     else
     {
         LOG(INFO) << path << "not handled";
-        throw Status404();
+        throw HandlerError(404, "File not found");
     }
     response->prependChain(std::move(IOBuf::copyBuffer(templateClosing)));
 }
@@ -171,8 +172,7 @@ void PrimaryHandler::buildPageTrailer()
     {
         LOG(DFATAL) << "response IOBuf not initialized when " 
             << __PRETTY_FUNCTION__ << " called";
-
-        return;
+        throw HandlerError(500, "Internal server error");
     }
 
     // NOTE: This section is intended to close out the page itself. 
@@ -223,17 +223,21 @@ void PrimaryHandler::onEOM() noexcept
             .body(std::move(response))
             .sendWithEOM();
     }
-    catch (const Status404 &)
+    catch (const HandlerError &err)
     {
         if(response == nullptr)
-            LOG(DFATAL) << "response IOBuf not initialized at Status404 handler";
-        else
-            response->prependChain(move(IOBuf::copyBuffer(
-                "The path you provided doesn't exists."
-            )));
+        {
+            LOG(ERROR) << "response IOBuf not initialized at HandlerError handler";
+            buildPageHeader();
+            if(!response)
+                response = IOBuf::create(0);
+        }
+        
+        response->prependChain(move(IOBuf::copyBuffer(err.what())));
+
         buildPageTrailer();
         ResponseBuilder(downstream_)
-            .status(404, "File Not Found")
+            .status(err.getCode(), err.what())
             .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
             .body(move(response))
             .sendWithEOM();
