@@ -1,4 +1,5 @@
 #include <string>
+#include <typeinfo>
 
 #include "DBConn.h"
 #include "gtest/gtest.h"
@@ -16,6 +17,16 @@ TEST_F(DBConnTest, urlEncode)
     EXPECT_EQ(conn.urlEncode("Hello"), string("Hello"));
     EXPECT_EQ(conn.urlEncode("Hello there"), string("Hello%20there"));
     EXPECT_EQ(conn.urlEncode("/blah %"), string("%2Fblah%20%25"));
+}
+
+TEST_F(DBConnTest, splitString)
+{   
+    DBConn conn;
+    auto rslt = conn.splitString("abcdefghij", 10, 2);
+    ASSERT_EQ(rslt.size(), 5);
+    ASSERT_STREQ(rslt[0].c_str(), "ab");
+    ASSERT_STREQ(rslt[2].c_str(), "ef");
+    ASSERT_STREQ(rslt[4].c_str(), "ij");
 }
 
 TEST_F(DBConnTest, constructor)
@@ -46,13 +57,40 @@ TEST_F(DBConnTest, getArticleHeadlines)
     DBConn conn("testuser", "123456", "localhost", "mimeographer");
     auto testData = conn.getHeadlines();
     ASSERT_EQ(testData.size(), 10);
-    ASSERT_EQ(testData[0][0], string("1"));
-    ASSERT_EQ(testData[0][1], string("Test 1"));
-    ASSERT_EQ(testData[0][2], leadline);
+    ASSERT_EQ(testData[0][(int)DBConn::headlinepart::id], string("1"));
+    ASSERT_EQ(testData[0][(int)DBConn::headlinepart::title], string("Test 1"));
+    ASSERT_EQ(testData[0][(int)DBConn::headlinepart::leadline], leadline);
 
-    ASSERT_EQ(testData[4][0], string("5"));
-    ASSERT_EQ(testData[4][1], string("Test 5"));
-    ASSERT_EQ(testData[4][2], leadline);
+    ASSERT_EQ(testData[4][(int)DBConn::headlinepart::id], string("5"));
+    ASSERT_EQ(testData[4][(int)DBConn::headlinepart::title], string("Test 5"));
+    ASSERT_EQ(testData[4][(int)DBConn::headlinepart::leadline], leadline);
+}
+
+TEST_F(DBConnTest, getArticle)
+{
+    static const string content = "Lorem ipsum dolor sit amet, consectetur adipi"
+        "scing elit. Nulla auctor neque eget lobortis mollis. Morbi tempus eu fe"
+        "lis eu auctor. Vestibulum ante ipsum primis in faucibus orci luctus et "
+        "ultrices posuere cubilia Curae; Cras tristique tincidunt arcu, eget dic"
+        "tum sapien interdum eget. Donec iaculis dapibus magna, nec vulputate ip"
+        "sum molestie quis. Proin egestas dui non ante scelerisque feugiat. Vest"
+        "ibulum tempor, turpis vitae porttitor condimentum, sapien quam rutrum e"
+        "rat, ut auctor dolor mi ac erat. Nullam aliquet ante risus, sit amet co"
+        "nvallis sapien ullamcorper vitae. Ut aliquet id tortor sed suscipit. Pe"
+        "llentesque rutrum leo a neque congue, id lacinia libero finibus. Fusce "
+        "eleifend venenatis vulputate. Vestibulum vitae mauris a ex pretium posu"
+        "ere id ac dui. Quisque neque dolor, gravida vel neque non, consequat im"
+        "perdiet nunc. Fusce finibus, enim sed rutrum interdum, felis lorem tris"
+        "tique dolor, quis pulvinar orci libero ut nisl. In hac habitasse platea"
+        " dictumst. Nullam tempus vestibulum nisi eget cras amet.";
+
+    DBConn conn("testuser", "123456", "localhost", "mimeographer");
+    auto testData = conn.getArticle("1");
+    ASSERT_STREQ(get<0>(testData).c_str(), "Test 1");
+
+    auto testContent = get<1>(testData);
+    ASSERT_EQ(testContent.size(), 1);
+    ASSERT_EQ(testContent[0], content);
 }
 
 } //namespace mimeographer

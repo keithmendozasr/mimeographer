@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include <array>
+#include <tuple>
 
 #include <glog/logging.h>
 #include <gtest/gtest_prod.h>
@@ -36,6 +37,7 @@ class DBConn
     friend class DBConnTest;
     FRIEND_TEST(DBConnTest, urlEncode);
     FRIEND_TEST(DBConnTest, constructor);
+    FRIEND_TEST(DBConnTest, splitString);
 
 private:
     // This is here for the unit tester
@@ -76,6 +78,17 @@ private:
     };
     std::unique_ptr<PGresult, PGresultCleaner> execQuery(const std::string &query) const;
 
+    ////
+    /// Split a "string" to a vector of std::string
+    /// \param str string to separate into vectors
+    /// \param strLen length of str
+    /// \param capacity Length to split strings in
+    ///     (default to std::string::capacity())
+    ////
+    std::vector<std::string> splitString(char const * const str,
+        const size_t &strLen,
+        const size_t &capacity = std::string().max_size()) const;
+
 public:
     ////
     /// Constructor
@@ -91,7 +104,16 @@ public:
     ////
     // Return available articles
     ////
-    std::vector<std::array<std::string, 3>> getHeadlines() const;
+    typedef std::vector<std::array<std::string, 3>> headline;
+    enum class headlinepart { id, title, leadline };
+    headline getHeadlines() const;
+
+    ////
+    // Return article specified by id
+    ////
+    typedef std::tuple<std::string, std::vector<std::string>> article;
+    enum class articlepart { title, content };
+    article getArticle(const std::string &id) const;
 
     ////
     // Exception class for DBConn

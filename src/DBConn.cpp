@@ -18,6 +18,7 @@
 #include <cctype>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 
 #include <glog/logging.h>
 
@@ -62,6 +63,24 @@ unique_ptr<PGresult, DBConn::PGresultCleaner>
     return move(unique_ptr<PGresult, PGresultCleaner>(tmp));
 }
 
+vector<string> DBConn::splitString(char const *const str,
+    const size_t &strLen, const size_t &capacity) const
+{
+    vector<string> retVal;
+    VLOG(3) << __PRETTY_FUNCTION__ << " start. String length: " << strLen
+        << " Capacity: " << capacity;
+    for(size_t i=0; i<strLen; i+= capacity)
+    {
+        VLOG(3) << "Value of i: " << i;
+        auto copysize = (strLen - i) < capacity ? (strLen-i) : capacity;
+        VLOG(3) << "Value of copysize: " << copysize;
+        retVal.push_back(move(string(&str[i],copysize)));
+    }
+
+    VLOG(3) << __PRETTY_FUNCTION__ << " end";
+    return move(retVal);
+}
+
 DBConn::DBConn(const string &username, const string &password,
     const string &dbHost, const string &dbName, const unsigned short port)
 {
@@ -92,7 +111,7 @@ DBConn::DBConn(const string &username, const string &password,
     VLOG(1) << "DB connection established";
 }
 
-vector<array<string,3>> DBConn::getHeadlines() const
+DBConn::headline DBConn::getHeadlines() const
 {
     const static string query =
         "SELECT id,title,substr(content,0,255) as leadline"
@@ -108,29 +127,56 @@ vector<array<string,3>> DBConn::getHeadlines() const
     auto rows = PQntuples(rsltPtr);
     VLOG(1) << "Number of articles found: " << rows;
 
-    vector<array<string,3>> retVal;
+    headline retVal;
     for(auto i=0; i<rows; i++)
     {
 		array<string, 3> article;
         auto len = PQgetlength(rsltPtr, i, 0);
         VLOG(2) << "ID length at row " << i << ": " << len;
-        article[0] = string(PQgetvalue(rsltPtr, i, 0), len);
-        VLOG(2) << "ID: " << article[0];
+        article[(int)headlinepart::id] = string(PQgetvalue(rsltPtr, i, 0), len);
+        VLOG(2) << "ID: " << article[(int)headlinepart::id];
 
         len = PQgetlength(rsltPtr, i, 1);
         VLOG(2) << "Title length at row " << i << ": " << len;
-        article[1] = string(PQgetvalue(rsltPtr, i, 1), len);
-        VLOG(2) << "Title: " << article[1];
+        article[(int)headlinepart::title] = string(PQgetvalue(rsltPtr, i, 1), len);
+        VLOG(2) << "Title: " << article[(int)headlinepart::title];
 
         len = PQgetlength(rsltPtr, i, 2);
         VLOG(2) << "leadline length at row " << i << ": " << len;
-        article[2] = string(PQgetvalue(rsltPtr, i, 2), len);
-        VLOG(2) << "leadline: " << article[2];
+        article[(int)headlinepart::leadline] = string(PQgetvalue(rsltPtr, i, 2), len);
+        VLOG(2) << "leadline: " << article[(int)headlinepart::leadline];
 
         retVal.push_back(article);
     }
 
     return move(retVal);
+}
+
+DBConn::article DBConn::getArticle(const string &id) const
+{
+    const static string query = "SELECT title,content FROM article WHERE id=$1";
+    auto tmp = PQexecParams(conn.get(), query.c_str(),
+        1, nullptr, array<const char *,1>({ id.c_str() }).data(), nullptr, nullptr,0);
+    if(!tmp)
+        throw DBError(PQerrorMessage(conn.get()));
+    auto dbResult = unique_ptr<PGresult, PGresultCleaner>(tmp);
+    auto rsltPtr = dbResult.get();
+    if(PQresultStatus(rsltPtr) != PGRES_TUPLES_OK)
+        throw DBError(PQresultErrorMessage(dbResult.get()));
+
+    VLOG(3) << "Number of articles: " << PQntuples(rsltPtr);
+    if(PQntuples(rsltPtr) != 1)
+        throw range_error("Unexpected number of articles returned from DB");
+   
+    auto len = PQgetlength(rsltPtr, 0,0);
+    VLOG(3) << "Title length: " << len;
+    auto title = string(PQgetvalue(rsltPtr, 0,0), len);
+
+    len = PQgetlength(rsltPtr,0,1);
+    VLOG(3) << "Content length: " << len;
+    auto content = splitString((char const *const)PQgetvalue(rsltPtr, 0,1), len);
+
+    return make_tuple(title, content);
 }
 
 const char *DBConn::DBError::what() const noexcept

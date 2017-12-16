@@ -17,6 +17,7 @@
 #include <string>
 #include <exception>
 #include <utility>
+#include <regex>
 
 #include <glog/logging.h>
 
@@ -29,12 +30,18 @@ using namespace folly;
 namespace mimeographer 
 {
 
-void PrimaryHandler::buildFrontPage()
+DBConn PrimaryHandler::connectDb()
 {
     DBConn conn(config.dbUser, config.dbPass, config.dbHost, config.dbName,
         config.dbPort);
+    return move(conn);
+}
+
+void PrimaryHandler::buildFrontPage()
+{
     VLOG(1) << "DB connection established";
     string data;
+    auto conn = connectDb();
     for(auto article : conn.getHeadlines())
     {
         auto line = string("<h1><a href=\"/article/") + article[0] + "\">"
@@ -54,6 +61,28 @@ void PrimaryHandler::buildFrontPage()
     }
     response->prependChain(move(IOBuf::copyBuffer(data)));
     VLOG(1) << "Front page data processed";
+}
+
+void PrimaryHandler::buildArticlePage()
+{
+    static regex parser("/article/(\\d+)");
+    smatch match;
+    if(regex_match(headers->getPath(), match, parser))
+    {
+        ssub_match id = match[1];
+        VLOG(2) << "Article id: " << id.str();
+        auto conn = connectDb();
+        auto article = conn.getArticle(id.str());
+        response->prependChain(move(IOBuf::copyBuffer(
+            string("<h1>") + get<0>(article) + "</h1>")));
+        for(auto contPart : get<1>(article))
+            response->prependChain(move(IOBuf::copyBuffer(contPart)));
+    }
+    else
+    {
+        LOG(WARNING) << "path didn't parse";
+        throw Status404();
+    }
 }
 
 void PrimaryHandler::buildPageHeader() 
@@ -114,8 +143,17 @@ void PrimaryHandler::buildContent()
     response->prependChain(std::move(IOBuf::copyBuffer(templateOpening)));
 
     auto path = headers->getPath();
+    VLOG(2) << "path.substr(9): " << path.substr(0,9);
     if(path == "/")
+    {
+        VLOG(1) << "Process front page";
         buildFrontPage();
+    }
+    else if(path.substr(0,9) == "/article/")
+    {
+        VLOG(1) << "Process article";
+        buildArticlePage();
+    }
     else
     {
         LOG(INFO) << path << "not handled";
@@ -225,4 +263,5 @@ void PrimaryHandler::onError(ProxygenError ) noexcept
     LOG(INFO) << "Error encountered while processing request";
     delete this;
 }
+
 }

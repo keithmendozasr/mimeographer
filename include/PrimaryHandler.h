@@ -44,7 +44,10 @@ private:
     std::unique_ptr<folly::IOBuf> response;
     std::unique_ptr<proxygen::HTTPMessage> headers;
 
+    DBConn connectDb();
+
     void buildFrontPage();
+    void buildArticlePage();
 
     void buildPageHeader();
     void buildContent();
