@@ -66,11 +66,19 @@ void PrimaryHandler::buildArticlePage()
         ssub_match id = match[1];
         VLOG(2) << "Article id: " << id.str();
         auto conn = connectDb();
-        auto article = conn.getArticle(id.str());
-        prependResponse(move(IOBuf::copyBuffer(
-            string("<h1>") + get<0>(article) + "</h1>")));
-        for(auto contPart : get<1>(article))
-            prependResponse(move(IOBuf::copyBuffer(contPart)));
+        try
+        {
+            auto article = conn.getArticle(id.str());
+            prependResponse(move(IOBuf::copyBuffer(
+                string("<h1>") + get<0>(article) + "</h1>")));
+            for(auto contPart : get<1>(article))
+                prependResponse(move(IOBuf::copyBuffer(contPart)));
+        }
+        catch(const range_error &)
+        {
+            LOG(INFO) << "Caught unexpected number of articles";
+            throw HandlerError(404, "Article " + id.str() + " not found");
+        }
     }
     else
     {
