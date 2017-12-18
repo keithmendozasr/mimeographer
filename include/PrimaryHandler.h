@@ -22,39 +22,21 @@
 #include <string>
 #include <exception>
 
-#include "Config.h"
-#include "DBConn.h"
+#include "HandlerBase.h"
 
 namespace mimeographer 
 {
 
-class PrimaryHandler : public proxygen::RequestHandler 
+class PrimaryHandler : public HandlerBase
 {
 
 private:
-    std::unique_ptr<folly::IOBuf> response;
-    std::unique_ptr<proxygen::HTTPMessage> headers;
-
-    DBConn connectDb();
-
     void buildFrontPage();
     void buildArticlePage();
+    void processRequest();
 
-    void buildPageHeader();
-    void buildContent();
-    void buildPageTrailer();
-
-    const Config &config;
 public:
-    PrimaryHandler(const Config &config) : config(config) {};
-
-    void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
-            noexcept override;
-    void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override {};
-    void onEOM() noexcept override;
-    void onUpgrade(proxygen::UpgradeProtocol proto) noexcept override {};
-    void requestComplete() noexcept override;
-    void onError(proxygen::ProxygenError err) noexcept override;
+    PrimaryHandler(const Config &config) : HandlerBase(config) {};
 };
 
 }
