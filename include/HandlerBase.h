@@ -22,6 +22,8 @@
 #include <string>
 #include <exception>
 
+#include "gtest/gtest.h"
+
 #include "Config.h"
 #include "DBConn.h"
 
@@ -30,6 +32,10 @@ namespace mimeographer
 
 class HandlerBase : public proxygen::RequestHandler 
 {
+    FRIEND_TEST(HandlerBaseTest, buildPageHeader);
+    FRIEND_TEST(HandlerBaseTest, buildPageTrailer);
+    FRIEND_TEST(HandlerBaseTest, prependResponse);
+
 private:
     const Config &config;
     std::unique_ptr<folly::IOBuf> handlerResponse;

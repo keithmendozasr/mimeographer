@@ -1,4 +1,6 @@
 include_directories(../../include ../../googletest-src/googletest/include/)
-add_executable(unit_test main.cpp DBConn.cpp ../../src/DBConn.cpp)
-target_link_libraries(unit_test gtest glog pq gflags)
+add_executable(unit_test main.cpp DBConn.cpp ../../src/DBConn.cpp
+    HandlerBase.cpp ../../src/HandlerBase.cpp)
+target_link_libraries(unit_test folly proxygenlib proxygenhttpserver gtest glog
+    pq gflags)
 add_test(NAME mimeographer_unit_test COMMAND unit_test)
