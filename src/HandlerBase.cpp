@@ -18,6 +18,7 @@
 #include <exception>
 #include <utility>
 #include <regex>
+#include <uuid/uuid.h>
 
 #include <glog/logging.h>
 
@@ -34,8 +35,12 @@ namespace mimeographer
 void HandlerBase::PostBodyCallback::onParam(const std::string& name,
     const std::string& value, uint64_t postBytesProcessed)
 {
-    VLOG(1) << __PRETTY_FUNCTION__ << " called. Name: " << name
+    VLOG(3) << __PRETTY_FUNCTION__ << " called. Name: " << name
         << " value: " << value << " bytes processed: " << postBytesProcessed;
+    parent.postParams[name] = {
+        PostParamType::VALUE,
+        value
+    };
 }
 
 int HandlerBase::PostBodyCallback::onFileStart(const std::string& name,
@@ -44,27 +49,74 @@ int HandlerBase::PostBodyCallback::onFileStart(const std::string& name,
 {
     VLOG(1) << __PRETTY_FUNCTION__ << " called. Name: " << name
         << " Filename: " << filename
-        << "Content-Type: "
+        << " Content-Type: "
         << msg->getHeaders().getSingleOrEmpty(proxygen::HTTPHeaderCode::HTTP_HEADER_CONTENT_TYPE);
+    
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+    char fileuuid[37];
+    uuid_unparse_lower(uuid, fileuuid);
+    VLOG(3) << "File UUID: " << fileuuid;
+
+    localFilename = parent.config.uploadDest;
+    localFilename += (*(localFilename.end()-1) != '/' ? "/" : "");
+    localFilename += fileuuid;
+    VLOG(3) << "Local filename to use: " << localFilename;
+
+    saveFile.open(localFilename, ios_base::out | ios_base::binary);
+    if(!saveFile.is_open())
+    {
+        LOG(ERROR) << "Failed to open " << localFilename
+            << " to store upload file for parameter \"" << name << "\"";
+        return -1;
+    }
+
+    uploadFileParam = name;
+    parent.postParams[uploadFileParam] = {
+        PostParamType::FILE_UPLOAD, "", filename, localFilename 
+    };
+
+    VLOG(1) << "File " << localFilename << " opened to store file for \""
+        << name << "\"";
     return 0;
 }
 
 int HandlerBase::PostBodyCallback::onFileData(std::unique_ptr<folly::IOBuf> data,
     uint64_t postBytesProcessed)
 {
-    VLOG(1) << __PRETTY_FUNCTION__ << " called. Data: "
-        << std::string((const char *)data->data(), (const size_t)data->length());
+    if(!saveFile)
+    {
+        LOG(ERROR) << "Received upload file data when local file not open";
+        return -1;
+    }
+
+    VLOG(3) << __PRETTY_FUNCTION__ << " called.";
+    saveFile.write((const char *)data->data(), data->length());
+    if(!saveFile)
+    {
+        LOG(ERROR) << "Error encountered writing to save file "
+            << localFilename << " for field " << uploadFileParam;
+        return -1;
+    }
+    VLOG(1) << "File data saved";
     return 0;
 }
 
 void HandlerBase::PostBodyCallback::onFileEnd(bool end, uint64_t postBytesProcessed)
 {
-    VLOG(1) << __PRETTY_FUNCTION__ << " called";
-}
-
-void HandlerBase::PostBodyCallback::onError()
-{
-    LOG(ERROR) << "Error encountered parsing POST request body";
+    if(!saveFile)
+        LOG(ERROR) << "Received file upload complete when local file not open";
+    else if(end)
+    {
+        VLOG(1) << "Done saving " << uploadFileParam << " data to " << localFilename;
+        saveFile.close();
+    }
+    else
+    {
+        LOG(INFO) << "Error encountered receiving upload file for "
+            << uploadFileParam;
+        parent.postParams.erase(uploadFileParam);
+    }
 }
 
 DBConn HandlerBase::connectDb()
@@ -171,6 +223,22 @@ void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept
 
 void HandlerBase::onEOM() noexcept 
 {
+    for(auto i = postParams.begin(); i != postParams.end(); i++)
+    {
+        ostringstream str;
+        str << "POST param: " << i->first;
+        switch(i->second.type)
+        {
+        case PostParamType::VALUE:
+            str << "\n\tType: value"
+                << "\n\tValue: \"" << i->second.value << "\"";
+            break;
+        default:
+            str << "\n\tType: Unknown";
+        }
+        VLOG(3) << str.str();
+    }
+
     ResponseBuilder builder(downstream_);
     try 
     {
@@ -226,6 +294,21 @@ void HandlerBase::onError(ProxygenError ) noexcept
 {
     LOG(INFO) << "Error encountered while processing request";
     delete this;
+}
+
+boost::optional<const HandlerBase::PostParam &> HandlerBase::getPostParam(const std::string &name) const
+{
+    PostParam retVal;
+    try
+    {
+        return postParams.at(name);
+    }
+    catch(out_of_range &e)
+    {
+        LOG(WARNING) << "POST param " << name << " does not exist";
+    }
+
+    return boost::none;
 }
 
 }

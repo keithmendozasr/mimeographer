@@ -15,13 +15,15 @@
  */
 #pragma once
 
-#include <proxygen/httpserver/RequestHandler.h>
-#include <proxygen/httpserver/ResponseBuilder.h>
-#include <proxygen/lib/http/experimental/RFC1867.h>
-
 #include <regex>
 #include <string>
 #include <exception>
+#include <fstream>
+#include <boost/optional.hpp>
+
+#include <proxygen/httpserver/RequestHandler.h>
+#include <proxygen/httpserver/ResponseBuilder.h>
+#include <proxygen/lib/http/experimental/RFC1867.h>
 
 #include "gtest/gtest.h"
 
@@ -37,15 +39,40 @@ class HandlerBase : public proxygen::RequestHandler
     FRIEND_TEST(HandlerBaseTest, buildPageHeader);
     FRIEND_TEST(HandlerBaseTest, buildPageTrailer);
     FRIEND_TEST(HandlerBaseTest, prependResponse);
+    FRIEND_TEST(HandlerBaseTest, getPostParam);
 
 private:
     const Config &config;
     std::unique_ptr<folly::IOBuf> handlerResponse;
     std::unique_ptr<proxygen::HTTPMessage> requestHeaders;
 
+    enum PostParamType
+    {
+        VALUE,
+        FILE_UPLOAD
+    };
+
+    struct PostParam
+    {
+        PostParamType type;
+        std::string value;
+        std::string filename;
+        std::string localFilename;
+    };
+
+    std::map<std::string, PostParam> postParams;
+
     class PostBodyCallback : public proxygen::RFC1867Codec::Callback
     {
+    private:
+        HandlerBase &parent;
+        std::ofstream saveFile;
+        std::string localFilename, uploadFileParam;
+
     public:
+        explicit PostBodyCallback(HandlerBase &parent) : parent(parent)
+        {}
+
         void onParam(const std::string& name, const std::string& value,
             uint64_t postBytesProcessed);
         int onFileStart(const std::string& name, const std::string& filename,
@@ -54,8 +81,14 @@ private:
         int onFileData(std::unique_ptr<folly::IOBuf> data, 
             uint64_t postBytesProcessed);
         void onFileEnd(bool end, uint64_t postBytesProcessed);
-        void onError();
+
+        void onError()
+        {
+            LOG(ERROR) << "Error encountered parsing POST request body";
+            parent.postParams.clear();
+        }
     };
+
     PostBodyCallback pbCallback;
     std::unique_ptr<proxygen::RFC1867Codec> postParser;
 
@@ -89,7 +122,7 @@ protected:
     }
 
 public:
-    HandlerBase(const Config &config) : config(config) {};
+    HandlerBase(const Config &config) : config(config), pbCallback(*this) {};
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
             noexcept override;
@@ -105,6 +138,12 @@ public:
     void requestComplete() noexcept override;
     void onError(proxygen::ProxygenError err) noexcept override;
     virtual void processRequest() = 0;
+
+    ////
+    /// Return the POST param if it exists. Otherwise nullptr
+    /// \param name POST param field to look for
+    ////
+    boost::optional<const PostParam &> getPostParam(const std::string &name) const;
 };
 
 }

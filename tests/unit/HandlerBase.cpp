@@ -37,7 +37,7 @@ public:
 class HandlerBaseTest : public ::testing::Test
 {
 protected:
-    Config config = { "localhost", "", "", "mimeographer", 5432 };
+    Config config = { "localhost", "", "", "mimeographer", 5432, "/tmp" };
 };
 
 TEST_F(HandlerBaseTest, buildPageHeader)
@@ -120,6 +120,30 @@ TEST_F(HandlerBaseTest, prependResponse)
     expectedVal->prependChain(move(IOBuf::copyBuffer(testString)));
     obj.prependResponse(IOBuf::copyBuffer(testString));
     ASSERT_TRUE(equalityOp(obj.handlerResponse, expectedVal));
+}
+
+TEST_F(HandlerBaseTest, getPostParam)
+{
+    HandlerBaseObj obj(config);
+    ASSERT_EQ(obj.getPostParam("a"), boost::none);
+
+    obj.postParams["a"] = { HandlerBase::PostParamType::VALUE, "field 1", "", "" };
+    obj.postParams["somefile"] = {
+        HandlerBase::PostParamType::FILE_UPLOAD, "",
+        "uploadfile.txt", "localversion"
+    };
+
+    auto param = obj.getPostParam("a");
+    EXPECT_TRUE(param);
+    ASSERT_EQ(param->type, HandlerBase::PostParamType::VALUE);
+    ASSERT_EQ(param->value, string("field 1"));
+
+    param = obj.getPostParam("somefile");
+    EXPECT_TRUE(param);
+    ASSERT_EQ(param->type, HandlerBase::PostParamType::FILE_UPLOAD);
+    ASSERT_EQ(param->value, string(""));
+    ASSERT_EQ(param->filename, string("uploadfile.txt"));
+    ASSERT_EQ(param->localFilename, string("localversion"));
 }
 
 } // namespace mimeographer
