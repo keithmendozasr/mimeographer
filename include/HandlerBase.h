@@ -17,6 +17,7 @@
 
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
+#include <proxygen/lib/http/experimental/RFC1867.h>
 
 #include <regex>
 #include <string>
@@ -30,6 +31,7 @@
 namespace mimeographer 
 {
 
+
 class HandlerBase : public proxygen::RequestHandler 
 {
     FRIEND_TEST(HandlerBaseTest, buildPageHeader);
@@ -40,6 +42,22 @@ private:
     const Config &config;
     std::unique_ptr<folly::IOBuf> handlerResponse;
     std::unique_ptr<proxygen::HTTPMessage> requestHeaders;
+
+    class PostBodyCallback : public proxygen::RFC1867Codec::Callback
+    {
+    public:
+        void onParam(const std::string& name, const std::string& value,
+            uint64_t postBytesProcessed);
+        int onFileStart(const std::string& name, const std::string& filename,
+            std::unique_ptr<proxygen::HTTPMessage> msg,
+            uint64_t postBytesProcessed);
+        int onFileData(std::unique_ptr<folly::IOBuf> data, 
+            uint64_t postBytesProcessed);
+        void onFileEnd(bool end, uint64_t postBytesProcessed);
+        void onError();
+    };
+    PostBodyCallback pbCallback;
+    std::unique_ptr<proxygen::RFC1867Codec> postParser;
 
     std::unique_ptr<folly::IOBuf> buildPageHeader();
     std::unique_ptr<folly::IOBuf> buildPageTrailer();
@@ -75,7 +93,13 @@ public:
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
             noexcept override;
-    void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override {};
+
+    void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override 
+    {
+        if(postParser)
+            postParser->onIngress(std::move(body));
+    };
+
     void onEOM() noexcept override;
     void onUpgrade(proxygen::UpgradeProtocol proto) noexcept override {};
     void requestComplete() noexcept override;

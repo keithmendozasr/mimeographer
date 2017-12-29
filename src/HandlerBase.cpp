@@ -31,6 +31,42 @@ using namespace folly;
 namespace mimeographer 
 {
 
+void HandlerBase::PostBodyCallback::onParam(const std::string& name,
+    const std::string& value, uint64_t postBytesProcessed)
+{
+    VLOG(1) << __PRETTY_FUNCTION__ << " called. Name: " << name
+        << " value: " << value << " bytes processed: " << postBytesProcessed;
+}
+
+int HandlerBase::PostBodyCallback::onFileStart(const std::string& name,
+    const std::string& filename, std::unique_ptr<proxygen::HTTPMessage> msg,
+    uint64_t postBytesProcessed)
+{
+    VLOG(1) << __PRETTY_FUNCTION__ << " called. Name: " << name
+        << " Filename: " << filename
+        << "Content-Type: "
+        << msg->getHeaders().getSingleOrEmpty(proxygen::HTTPHeaderCode::HTTP_HEADER_CONTENT_TYPE);
+    return 0;
+}
+
+int HandlerBase::PostBodyCallback::onFileData(std::unique_ptr<folly::IOBuf> data,
+    uint64_t postBytesProcessed)
+{
+    VLOG(1) << __PRETTY_FUNCTION__ << " called. Data: "
+        << std::string((const char *)data->data(), (const size_t)data->length());
+    return 0;
+}
+
+void HandlerBase::PostBodyCallback::onFileEnd(bool end, uint64_t postBytesProcessed)
+{
+    VLOG(1) << __PRETTY_FUNCTION__ << " called";
+}
+
+void HandlerBase::PostBodyCallback::onError()
+{
+    LOG(ERROR) << "Error encountered parsing POST request body";
+}
+
 DBConn HandlerBase::connectDb()
 {
     return move(DBConn(config.dbUser, config.dbPass, config.dbHost,
@@ -110,6 +146,26 @@ void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept
         << headers->getClientPort()
         << " " << headers->getMethodString()
         << " " << headers->getPath();
+
+    auto method = headers->getMethod();
+    if(method && method == HTTPMethod::POST)
+    {
+        VLOG(1) << "Processing POST request";
+        auto val = headers->getHeaders().getSingleOrEmpty(
+            HTTPHeaderCode::HTTP_HEADER_CONTENT_TYPE);
+        VLOG(3) << "Val: " << val;
+        if(val.find("multipart/form-data") == 0)
+        {
+            auto boundary = val.substr(val.find("boundary=")+9);
+            VLOG(3) << "Boundary: " << boundary;
+            postParser = make_unique<RFC1867Codec>(boundary);
+            postParser->setCallback(&pbCallback);
+        }
+        else
+            LOG(INFO) << "Not processing POST request with Content-Type " << val;
+    }
+    else
+        VLOG(1) << "Not POST";
     this->requestHeaders = move(headers);
 }
 
@@ -118,6 +174,8 @@ void HandlerBase::onEOM() noexcept
     ResponseBuilder builder(downstream_);
     try 
     {
+        if(postParser)
+            postParser->onIngressEOM();
         processRequest();
 
         auto response = buildPageHeader();
