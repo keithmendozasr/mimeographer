@@ -128,6 +128,22 @@ protected:
         cookieJar[name] = value;
     }
 
+    inline boost::optional<std::string> getCookie(const std::string &name)
+    {
+        try
+        {
+            auto r = cookieJar.at(name);
+            VLOG(1) << "Cookie with name " << name << " found";
+            return r;
+        }
+        catch(std::out_of_range &e)
+        {
+            VLOG(1) << "No cookie with name " << name;
+        }
+
+        return boost::none;
+    }
+
 public:
     HandlerBase(const Config &config) : config(config), pbCallback(*this) {};
 

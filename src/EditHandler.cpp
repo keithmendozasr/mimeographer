@@ -22,6 +22,7 @@
 
 #include "EditHandler.h"
 #include "HandlerError.h"
+#include "HandlerRedirect.h"
 
 using namespace std;
 using namespace proxygen;
@@ -68,13 +69,33 @@ void EditHandler::processRequest()
 
     if(path == "/edit")
     {
-        LOG(INFO) << "Displaying login page";
-        buildLoginPage();
+        // TODO: Fix this with something better
+        auto tmp = getCookie("loggedin");
+        if(tmp && *tmp == "yes")
+        {
+            LOG(INFO) << "User is logged-in";
+            prependResponse(IOBuf::copyBuffer("<p>Edit page here</p>"));
+        }
+        else
+        {
+            LOG(INFO) << "Redirect to login page";
+            throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303,
+                "/edit/login"
+            );
+        }
     }
     else if(path == "/edit/login")
     {
-        LOG(INFO) << "Process login request";
-        processLogin();
+        if(getMethod() == "POST")
+        {
+            LOG(INFO) << "Process login request";
+            processLogin();
+        }
+        else if(getMethod() == "GET")
+        {
+            LOG(INFO) << "Display login page";
+            buildLoginPage();
+        }
     }
     else
     {

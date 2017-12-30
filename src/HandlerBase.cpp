@@ -24,6 +24,7 @@
 
 #include "HandlerBase.h"
 #include "HandlerError.h"
+#include "HandlerRedirect.h"
 
 using namespace std;
 using namespace proxygen;
@@ -237,7 +238,7 @@ void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept
     else
         VLOG(1) << "Not POST";
 
-    VLOG(1) << "Collect coookies";
+    VLOG(1) << "Collect cookies";
     headers->getHeaders().forEachValueOfHeader(HTTPHeaderCode::HTTP_HEADER_COOKIE,
         [this](const string &val)
         {
@@ -288,6 +289,13 @@ void HandlerBase::onEOM() noexcept
         }
         
         builder.body(std::move(response))
+            .sendWithEOM();
+    }
+    catch (const HandlerRedirect &e)
+    {
+        LOG(INFO) << "Redirecting user to " << e.getLocation();
+        builder.status(e.getCode(), e.getStatusText())
+            .header(HTTP_HEADER_LOCATION, e.getLocation())
             .sendWithEOM();
     }
     catch (const HandlerError &err)
