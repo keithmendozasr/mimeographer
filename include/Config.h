@@ -23,14 +23,15 @@ namespace mimeographer
 class Config
 {
 public:
-    std::string dbHost, dbUser, dbPass, dbName, uploadDest;
+    std::string dbHost, dbUser, dbPass, dbName, uploadDest, hostName;
     unsigned int dbPort;
 
     Config(const std::string &dbHost, const std::string& dbUser,
         const std::string& dbPass, const std::string &dbName,
-        const unsigned int &dbPort, const std::string &uploadDest) : 
+        const unsigned int &dbPort, const std::string &uploadDest,
+        const std::string &hostName) : 
         dbHost(dbHost), dbUser(dbUser), dbPass(dbPass), dbName(dbName),
-        uploadDest(uploadDest), dbPort(dbPort)
+        uploadDest(uploadDest), hostName(hostName), dbPort(dbPort)
         // uploadDest and dbPort are swapped relative to the constructor
         // params to keep the compiler happy
     {}

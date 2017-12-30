@@ -17,8 +17,8 @@
 #include <string>
 #include <exception>
 #include <utility>
-#include <regex>
 #include <uuid/uuid.h>
+#include <cstring>
 
 #include <glog/logging.h>
 
@@ -191,6 +191,24 @@ unique_ptr<IOBuf> HandlerBase::buildPageTrailer()
     return move(IOBuf::copyBuffer(templateTail));
 }
 
+void HandlerBase::parseCookies(const string &cookies) noexcept
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    char *cookiePartSave;
+    auto cookie = strtok_r(const_cast<char *>(cookies.c_str()), "; ", &cookiePartSave);
+    while(cookie)
+    {
+        VLOG(3) << "Cookie part: " << cookie;
+        char *nameValSave;
+        auto name = strtok_r(cookie, "=", &nameValSave);
+        auto val = strtok_r(nullptr, "=", &nameValSave);
+        VLOG(3) << "Cookie name: " << name << " value: " << val;
+        cookieJar[name] = val;
+        cookie = strtok_r(nullptr, "; ", &cookiePartSave);
+    }
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
 void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept 
 {
     LOG(INFO) << "Handling request from " 
@@ -218,6 +236,14 @@ void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept
     }
     else
         VLOG(1) << "Not POST";
+
+    VLOG(1) << "Collect coookies";
+    headers->getHeaders().forEachValueOfHeader(HTTPHeaderCode::HTTP_HEADER_COOKIE,
+        [this](const string &val)
+        {
+            parseCookies(val);
+            return false;
+        });
     this->requestHeaders = move(headers);
 }
 
@@ -252,8 +278,16 @@ void HandlerBase::onEOM() noexcept
 
         // Send the response that everything worked out well
         builder.status(200, "OK")
-            .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
-            .body(std::move(response))
+            .header(HTTP_HEADER_CONTENT_TYPE, "text/html");
+        for(auto i : cookieJar)
+        {
+            VLOG(3) << "Add cookie " << i.first << "=" << i.second;
+            string cookie = i.first + "=" + i.second
+                + "; HttpOnly; Path=/; Domain=" + config.hostName;
+            builder.header(HTTP_HEADER_SET_COOKIE, cookie);
+        }
+        
+        builder.body(std::move(response))
             .sendWithEOM();
     }
     catch (const HandlerError &err)

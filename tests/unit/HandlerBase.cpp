@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include "gtest/gtest.h"
+
 #include <folly/io/IOBuf.h>
 
 #include "HandlerBase.h"
-#include "gtest/gtest.h"
 
 using namespace std;
 using namespace folly;
@@ -37,7 +38,10 @@ public:
 class HandlerBaseTest : public ::testing::Test
 {
 protected:
-    Config config = { "localhost", "", "", "mimeographer", 5432, "/tmp" };
+    Config config;
+    HandlerBaseTest() :
+        config("localhost", "", "", "mimeographer", 5432, "/tmp", "localhost")
+    {}
 };
 
 TEST_F(HandlerBaseTest, buildPageHeader)
@@ -46,7 +50,7 @@ TEST_F(HandlerBaseTest, buildPageHeader)
         "<!doctype html>\n"
         "<html lang=\"en\">\n"
         "<head>\n"
-        "<title>Hello, world!</title>\n"
+        "<title>Mimeographer</title>\n"
         "<meta charset=\"utf-8\">\n"
         "<meta name=\"viewport\" content=\"width=device-width, "
             "initial-scale=1, shrink-to-fit=no\">\n"
@@ -144,6 +148,21 @@ TEST_F(HandlerBaseTest, getPostParam)
     ASSERT_EQ(param->value, string(""));
     ASSERT_EQ(param->filename, string("uploadfile.txt"));
     ASSERT_EQ(param->localFilename, string("localversion"));
+}
+
+TEST_F(HandlerBaseTest, parseCookies)
+{
+    {
+        HandlerBaseObj obj(config);
+        obj.parseCookies("cookie1=asdfasdf; b=bbbb");
+        ASSERT_EQ(obj.cookieJar.size(), 2);
+        ASSERT_NO_THROW( {
+            ASSERT_EQ(obj.cookieJar.at("cookie1"), "asdfasdf");
+        });
+        ASSERT_NO_THROW( {
+            ASSERT_EQ(obj.cookieJar.at("b"), "bbbb");
+        });
+    }
 }
 
 } // namespace mimeographer

@@ -41,6 +41,7 @@ DEFINE_string(dbPass, "", "DB password");
 DEFINE_string(dbName, "mimeographer", "Database name");
 DEFINE_int32(dbPort, 5432, "DB server port");
 DEFINE_string(uploadDest, "/tmp", "Folder to save uploaded files to");
+DEFINE_string(hostName, "localhost", "Hostname mimeograph will use");
 
 namespace mimeographer 
 {
@@ -100,12 +101,8 @@ int main(int argc, char* argv[])
     }
 
     Config config(
-        FLAGS_dbHost,
-        FLAGS_dbUser,
-        FLAGS_dbPass,
-        FLAGS_dbName,
-        FLAGS_dbPort,
-        FLAGS_uploadDest
+        FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName, FLAGS_dbPort,
+        FLAGS_uploadDest, FLAGS_hostName
     );
 
     HTTPServerOptions options;

@@ -15,7 +15,6 @@
  */
 #pragma once
 
-#include <regex>
 #include <string>
 #include <exception>
 #include <fstream>
@@ -39,6 +38,7 @@ class HandlerBase : public proxygen::RequestHandler
     FRIEND_TEST(HandlerBaseTest, buildPageTrailer);
     FRIEND_TEST(HandlerBaseTest, prependResponse);
     FRIEND_TEST(HandlerBaseTest, getPostParam);
+    FRIEND_TEST(HandlerBaseTest, parseCookies);
 
 private:
     const Config &config;
@@ -94,6 +94,9 @@ private:
     std::unique_ptr<folly::IOBuf> buildPageHeader();
     std::unique_ptr<folly::IOBuf> buildPageTrailer();
 
+    std::map<std::string, std::string> cookieJar;
+    void parseCookies(const std::string &cookies) noexcept;
+
 protected:
     DBConn connectDb();
     inline void prependResponse(std::unique_ptr<folly::IOBuf> buf)
@@ -118,6 +121,11 @@ protected:
     inline const std::string & getMethod() const
     {
         return requestHeaders->getMethodString();
+    }
+
+    inline void addCookie(const std::string &name, const std::string &value)
+    {
+        cookieJar[name] = value;
     }
 
 public:
