@@ -131,7 +131,7 @@ unique_ptr<IOBuf> HandlerBase::buildPageHeader()
         "<!doctype html>\n"
         "<html lang=\"en\">\n"
         "<head>\n"
-        "<title>Hello, world!</title>\n"
+        "<title>Mimeographer</title>\n"
         "<meta charset=\"utf-8\">\n"
         "<meta name=\"viewport\" content=\"width=device-width, "
             "initial-scale=1, shrink-to-fit=no\">\n"
