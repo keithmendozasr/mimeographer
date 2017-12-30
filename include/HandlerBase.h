@@ -33,7 +33,6 @@
 namespace mimeographer 
 {
 
-
 class HandlerBase : public proxygen::RequestHandler 
 {
     FRIEND_TEST(HandlerBaseTest, buildPageHeader);
