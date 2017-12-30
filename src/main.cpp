@@ -20,6 +20,7 @@
 #include <proxygen/httpserver/RequestHandlerFactory.h>
 
 #include "PrimaryHandler.h"
+#include "EditHandler.h"
 
 using namespace mimeographer;
 using namespace proxygen;
@@ -62,9 +63,22 @@ public:
         LOG(INFO) << "Server stopped";
     }
 
-    RequestHandler* onRequest(RequestHandler*, HTTPMessage*) noexcept override
+    RequestHandler* onRequest(RequestHandler* handler, HTTPMessage* message) noexcept override
     {
-        return new PrimaryHandler(config);
+        auto path = message->getPath();
+        RequestHandler *ptr;
+        if(message->getPath().substr(0, 5) == "/edit")
+        {
+            LOG(INFO) << "Processing edit";
+            ptr = new EditHandler(config);
+        }
+        else
+        {
+            LOG(INFO) << "Processing with primary";
+            ptr = new PrimaryHandler(config);
+        }
+
+        return ptr;
     }
 };
 
