@@ -31,7 +31,8 @@ namespace mimeographer
 class EditHandler : public HandlerBase
 {
 private:
-    void buildLogin();
+    void buildLoginPage();
+    void processLogin();
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}
