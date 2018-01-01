@@ -91,8 +91,8 @@ DBConn::DBConn(const string &username, const string &password,
         << "\nPort: " << port;
 
     ostringstream URI;
-    URI << "postgresql://" << username << ":" << password << "@"
-        << dbHost << ":" << port << "/" << dbName 
+    URI << "postgresql://" << urlEncode(username) << ":" << urlEncode(password)
+        << "@" << dbHost << ":" << port << "/" << urlEncode(dbName) 
         << "?connect_timeout=30&application_name=mimeographer";
 
     auto tmp = PQconnectdb(URI.str().c_str());
