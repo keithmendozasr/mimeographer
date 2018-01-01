@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <typeinfo>
 
@@ -8,7 +9,13 @@ using namespace std;
 
 namespace mimeographer
 {
-class DBConnTest : public ::testing::Test {};
+class DBConnTest : public ::testing::Test 
+{
+protected:
+    const char *testUUID = "4887ebff-f59e-4881-9a90-9bf4b80f415e";
+    const int testUserId = 1;
+    DBConn testConn = { "testuser", "123456", "localhost", "mimeographer" };
+};
 
 TEST_F(DBConnTest, urlEncode)
 {
@@ -54,8 +61,7 @@ TEST_F(DBConnTest, getArticleHeadlines)
         "m ante ipsum primis in faucibus orci luctus et ultrices posuere cubili"
         "a Curae; Cras tristique tincidunt arcu, eget";
 
-    DBConn conn("testuser", "123456", "localhost", "mimeographer");
-    auto testData = conn.getHeadlines();
+    auto testData = testConn.getHeadlines();
     ASSERT_EQ(testData.size(), 10);
     ASSERT_EQ(testData[0][(int)DBConn::headlinepart::id], string("1"));
     ASSERT_EQ(testData[0][(int)DBConn::headlinepart::title], string("Test 1"));
@@ -84,13 +90,60 @@ TEST_F(DBConnTest, getArticle)
         "tique dolor, quis pulvinar orci libero ut nisl. In hac habitasse platea"
         " dictumst. Nullam tempus vestibulum nisi eget cras amet.";
 
-    DBConn conn("testuser", "123456", "localhost", "mimeographer");
-    auto testData = conn.getArticle("1");
+    auto testData = testConn.getArticle("1");
     ASSERT_STREQ(get<0>(testData).c_str(), "Test 1");
 
     auto testContent = get<1>(testData);
     ASSERT_EQ(testContent.size(), 1);
     ASSERT_EQ(testContent[0], content);
+}
+
+TEST_F(DBConnTest, getUserInfo)
+{
+
+    ASSERT_NO_THROW({
+        auto testData = testConn.getUserInfo("a@a.com");
+        auto data = *testData;
+        ASSERT_STREQ(data[(int)DBConn::UserParts::id].c_str(), "1");
+        ASSERT_STREQ(data[(int)DBConn::UserParts::fullname].c_str(), "Test User");
+        ASSERT_STREQ(data[(int)DBConn::UserParts::email].c_str(), "a@a.com");
+        ASSERT_STREQ(data[(int)DBConn::UserParts::salt].c_str(), "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+        ASSERT_STREQ(data[(int)DBConn::UserParts::password].c_str(), "kt56uQBSTP-bT4ybmGCgsmU48BBx__mcE61X7UsWxpE");
+    });
+
+    ASSERT_NO_THROW({
+        auto testData = testConn.getUserInfo("asdf@example.com");
+        ASSERT_FALSE(testData);
+    });
+
+    ASSERT_NO_THROW({
+        auto testData = testConn.getUserInfo("off@example.com");
+        ASSERT_FALSE(testData);
+    });
+}
+
+TEST_F(DBConnTest, saveSession)
+{
+    ASSERT_NO_THROW({ testConn.saveSession(testUUID); });
+
+    // Test update last_seen
+    ASSERT_NO_THROW({ testConn.saveSession(testUUID); });
+}
+
+TEST_F(DBConnTest, mapUuidToUser)
+{
+    ASSERT_NO_THROW({ testConn.mapUuidToUser(testUUID, testUserId); });
+
+    // Test mapping already present
+    ASSERT_NO_THROW({ testConn.mapUuidToUser(testUUID, testUserId); });
+}
+
+TEST_F(DBConnTest, getMappedUser)
+{
+    ASSERT_NO_THROW({
+        ASSERT_EQ(*testConn.getMappedUser(testUUID), testUserId);
+        ASSERT_FALSE(testConn.getMappedUser("11111111-1111-1111-1111-111111111111"));
+    });
 }
 
 } //namespace mimeographer

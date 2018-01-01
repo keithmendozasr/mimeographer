@@ -23,6 +23,7 @@
 #include "EditHandler.h"
 #include "HandlerError.h"
 #include "HandlerRedirect.h"
+#include "UserSession.h"
 
 using namespace std;
 using namespace proxygen;
@@ -31,7 +32,7 @@ using namespace folly;
 namespace mimeographer 
 {
 
-void EditHandler::buildLoginPage()
+void EditHandler::buildLoginPage(const bool &showMismatch)
 {
 	const static string html = 
         "<form method=\"post\" action=\"/edit/login\" enctype=\"multipart/form-data\" class=\"form-signin\" style=\"max-width:330px; margin:0 auto\">"
@@ -42,23 +43,57 @@ void EditHandler::buildLoginPage()
         "<input type=\"password\" name=\"password\" id=\"inputPassword\" class=\"form-control\" placeholder=\"Password\" required>"
         "<button class=\"btn btn-lg btn-primary btn-block\" type=\"submit\">Sign in</button>"
         "</form>";
+
+    const static string mismatchBanner =
+        "<div class=\"alert alert-primary\" role=\"alert\">"
+            "Username/password incorrect. Try again!"
+        "</div>";
+    if(showMismatch)
+    {
+        VLOG(1) << "Showing mismatch banner";
+        prependResponse(IOBuf::copyBuffer(mismatchBanner));
+    }
+    else
+        VLOG(1) << "Not showing mismatch banner";
+
     prependResponse(IOBuf::copyBuffer(html));
 }
 
 void EditHandler::processLogin()
 {
-    if(getMethod() != "POST")
-    {
-        LOG(WARNING) << "Expected POST method when requesting " << getPath();
-        throw HandlerError(405, "Unexpected request method");
-    }
+    const static string cookieName = "session";
 
-    auto param = getPostParam("login");
-    string html = "<p><b>User name:</b> " + (param ? param->value : "UNKNOWN") + "</p>";
-    param = getPostParam("password");
-    html += "<p><b>Password:</b> " + (param ? param->value : "UNKOWN") + "</p>";
-    addCookie("loggedin", "yes");   
-    prependResponse(IOBuf::copyBuffer(html));
+    auto login = getPostParam("login");
+    auto pass = getPostParam("password");
+    if(login && pass && 
+        login->type == PostParamType::VALUE && pass->type == PostParamType::VALUE)
+    {
+        auto dbConn = connectDb();
+        auto uuid = getCookie(cookieName);
+        if(!uuid)
+            uuid = "";
+
+        VLOG(1) << "Login credentials supplied";
+        VLOG(3) << "Login: " << login->value
+            << "\n\tPassword: NOT PRINTED"
+            << "\n\tUUID from cookie: " << *uuid;
+
+        UserSession session(dbConn, *uuid);
+        VLOG(1) << "Check provided credential";
+        if(session.authenticateLogin(login->value, pass->value))
+        {
+            LOG(INFO) << "Login authenticated";
+            addCookie(cookieName, session.getUUID());
+            throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/edit");
+        }
+        else
+            LOG(INFO) << "Login rejected";
+    }
+    else
+        LOG(WARNING) << "POST missing login credential"; 
+
+    // If code gets here; let user retry
+    buildLoginPage(true);
 }
 
 void EditHandler::processRequest() 
@@ -67,24 +102,7 @@ void EditHandler::processRequest()
     if(path.back() == '/')
         path = path.substr(0,path.size()-1);
 
-    if(path == "/edit")
-    {
-        // TODO: Fix this with something better
-        auto tmp = getCookie("loggedin");
-        if(tmp && *tmp == "yes")
-        {
-            LOG(INFO) << "User is logged-in";
-            prependResponse(IOBuf::copyBuffer("<p>Edit page here</p>"));
-        }
-        else
-        {
-            LOG(INFO) << "Redirect to login page";
-            throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303,
-                "/edit/login"
-            );
-        }
-    }
-    else if(path == "/edit/login")
+    if(path == "/edit/login")
     {
         if(getMethod() == "POST")
         {
@@ -99,8 +117,29 @@ void EditHandler::processRequest()
     }
     else
     {
-        LOG(INFO) << path << "not handled";
-        throw HandlerError(404, "File not found");
+        VLOG(1) << "Not /edit/login";
+
+        auto dbConn = connectDb();
+        auto sessionId = getCookie("session");
+        VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
+        UserSession session(dbConn, (sessionId ? *sessionId : ""));
+        if(!session.userAuthenticated())
+        {
+            LOG(INFO) << "Redirect to login page";
+            addCookie("session", session.getUUID());
+            throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303,
+                "/edit/login"
+            );
+        }
+        
+        LOG(INFO) << "User is logged-in";
+        if(path == "/edit")
+            prependResponse(IOBuf::copyBuffer("<p>Edit page here</p>"));
+        else
+        {
+            LOG(INFO) << path << "not handled";
+            throw HandlerError(404, "File not found");
+        }
     }
 }
 

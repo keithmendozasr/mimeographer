@@ -23,7 +23,8 @@
 #include <proxygen/httpserver/ResponseBuilder.h>
 
 #include "Config.h"
-#include "PrimaryHandler.h"
+#include "HandlerBase.h"
+#include "UserSession.h"
 
 namespace mimeographer 
 {
@@ -31,7 +32,7 @@ namespace mimeographer
 class EditHandler : public HandlerBase
 {
 private:
-    void buildLoginPage();
+    void buildLoginPage(const bool &showMismatch = false);
     void processLogin();
 
 public:

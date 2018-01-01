@@ -294,8 +294,16 @@ void HandlerBase::onEOM() noexcept
     catch (const HandlerRedirect &e)
     {
         LOG(INFO) << "Redirecting user to " << e.getLocation();
-        builder.status(e.getCode(), e.getStatusText())
-            .header(HTTP_HEADER_LOCATION, e.getLocation())
+        builder.status(e.getCode(), e.getStatusText());
+        for(auto i : cookieJar)
+        {
+            VLOG(3) << "Add cookie " << i.first << "=" << i.second;
+            string cookie = i.first + "=" + i.second
+                + "; HttpOnly; Path=/; Domain=" + config.hostName;
+            builder.header(HTTP_HEADER_SET_COOKIE, cookie);
+        }
+            
+        builder.header(HTTP_HEADER_LOCATION, e.getLocation())
             .sendWithEOM();
     }
     catch (const HandlerError &err)

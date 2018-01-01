@@ -39,17 +39,17 @@ class HandlerBase : public proxygen::RequestHandler
     FRIEND_TEST(HandlerBaseTest, prependResponse);
     FRIEND_TEST(HandlerBaseTest, getPostParam);
     FRIEND_TEST(HandlerBaseTest, parseCookies);
-
-private:
-    const Config &config;
-    std::unique_ptr<folly::IOBuf> handlerResponse;
-    std::unique_ptr<proxygen::HTTPMessage> requestHeaders;
-
+protected:
     enum PostParamType
     {
         VALUE,
         FILE_UPLOAD
     };
+
+private:
+    const Config &config;
+    std::unique_ptr<folly::IOBuf> handlerResponse;
+    std::unique_ptr<proxygen::HTTPMessage> requestHeaders;
 
     struct PostParam
     {

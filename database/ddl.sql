@@ -2,8 +2,8 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     fullname VARCHAR(256) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password1 CHAR(32) NOT NULL, --salt
-    password2 CHAR(32) NOT NULL, --sha256 output
+    salt CHAR(43) NOT NULL, --32-byte salt BASE64-encoded
+    password CHAR(43) NOT NULL, --sha256 of password+salt BASE64-encoded
     isactive BOOL DEFAULT TRUE
 );
 
@@ -37,4 +37,18 @@ CREATE TABLE IF NOT EXISTS comments (
         ON UPDATE CASCADE ON DELETE CASCADE,
     content TEXT,
     publishdate TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS session (
+    id UUID PRIMARY KEY,
+    last_seen TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX session_time ON session (last_seen);
+
+CREATE TABLE IF NOT EXISTS user_session (
+    userid INT NOT NULL REFERENCES users(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    sessionid UUID NOT NULL REFERENCES session(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(userid,sessionid)
 );

@@ -22,6 +22,8 @@
 #include <array>
 #include <tuple>
 
+#include <boost/optional.hpp>
+
 #include <glog/logging.h>
 #include <gtest/gtest_prod.h>
 #include <postgresql/libpq-fe.h>
@@ -64,6 +66,11 @@ private:
     ////
     const std::string urlEncode(const std::string &str) const;
 
+    ////
+    /// Execute query for non-parameter query
+    /// \param query Query string
+    /// \return unique_ptr-managed PGresult
+    ////
     class PGresultCleaner
     {
     public:
@@ -79,6 +86,16 @@ private:
     std::unique_ptr<PGresult, PGresultCleaner> execQuery(const std::string &query) const;
 
     ////
+    /// Execute query with parameters
+    /// \param query Query string
+    /// \param params Query parameters
+    /// \return unique_ptr-managed PGresult
+    ////
+    template <std::size_t S>
+    std::unique_ptr<PGresult, PGresultCleaner> execQuery(
+        const std::string &query, std::array<const char *, S> params) const;
+
+    ////
     /// Split a "string" to a vector of std::string
     /// \param str string to separate into vectors
     /// \param strLen length of str
@@ -91,7 +108,7 @@ private:
 
 public:
     ////
-    // Exception class for DBConn
+    /// Exception class for DBConn
     ////
     class DBError : public std::exception
     {
@@ -123,19 +140,50 @@ public:
         const unsigned short port=5432);
 
     ////
-    // Return available articles
+    /// Return available articles
     ////
     typedef std::vector<std::array<std::string, 3>> headline;
+
+    //TODO: Fix the enum name
     enum class headlinepart { id, title, leadline };
     headline getHeadlines() const;
 
     ////
-    // Return article specified by id
+    /// Return article specified by id
     ////
     typedef std::tuple<std::string, std::vector<std::string>> article;
+    
+    //TODO: Fix the enum name
     enum class articlepart { title, content };
     article getArticle(const std::string &id) const;
 
+    ////
+    /// Retrieve the user info stored from database, if found
+    /// \param login User's login to find
+    ////
+    typedef std::array<std::string, 5> UserRecord;
+    enum class UserParts { id, fullname, email, salt, password };
+    boost::optional<UserRecord> getUserInfo(const std::string &email);
+
+    ////
+    /// Save session
+    /// Any errors will cause an exception
+    ///
+    ////
+    void saveSession(const std::string &uuid);
+
+    ////
+    /// Associate session with authenticated user
+    /// \param uuid UUID to associate with user id
+    /// \param userID User ID to associated to UUID
+    ////
+    void mapUuidToUser(const std::string &uuid, const int &userId);
+
+    ////
+    /// Return User ID mapped to given session, if one exists
+    /// \param uuid UUID to retrieve
+    ////
+    boost::optional<const int> getMappedUser(const std::string &uuid);
 };
 
 }
