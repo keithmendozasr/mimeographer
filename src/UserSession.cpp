@@ -100,7 +100,7 @@ tuple<string,string> UserSession::hashPassword(const string &pass,
     string hashStr = Base64::urlEncode(ByteRange(hash, 32));
     VLOG(2) << "sha256 output: " << hashStr;
     
-    return make_tuple(hashStr, useSalt);
+    return move(make_tuple(hashStr, useSalt));
 }
 
 const bool UserSession::authenticateLogin(const std::string &email,

@@ -348,7 +348,6 @@ void HandlerBase::onError(ProxygenError ) noexcept
 
 boost::optional<const HandlerBase::PostParam &> HandlerBase::getPostParam(const std::string &name) const
 {
-    PostParam retVal;
     try
     {
         return postParams.at(name);

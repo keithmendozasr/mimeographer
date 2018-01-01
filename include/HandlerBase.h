@@ -58,7 +58,6 @@ private:
         std::string filename;
         std::string localFilename;
     };
-
     std::map<std::string, PostParam> postParams;
 
     class PostBodyCallback : public proxygen::RFC1867Codec::Callback
@@ -134,7 +133,7 @@ protected:
         {
             auto r = cookieJar.at(name);
             VLOG(1) << "Cookie with name " << name << " found";
-            return r;
+            return move(r);
         }
         catch(std::out_of_range &e)
         {

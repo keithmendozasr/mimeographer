@@ -80,7 +80,7 @@ unique_ptr<PGresult, DBConn::PGresultCleaner> DBConn::execQuery(
         throw (DBError(PQresultErrorMessage(tmp)));
 
     VLOG(1) << "Returning result pointer";
-    return unique_ptr<PGresult, PGresultCleaner>(tmp);
+    return move(unique_ptr<PGresult, PGresultCleaner>(tmp));
 }
 
 vector<string> DBConn::splitString(char const *const str,
@@ -185,7 +185,7 @@ DBConn::article DBConn::getArticle(const string &id) const
     VLOG(3) << "Content length: " << len;
     auto content = splitString((char const *const)PQgetvalue(dbResult.get(), 0,1), len);
 
-    return make_tuple(title, content);
+    return move(make_tuple(title, content));
 }
 
 boost::optional<DBConn::UserRecord> DBConn::getUserInfo(
