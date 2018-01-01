@@ -179,9 +179,4 @@ DBConn::article DBConn::getArticle(const string &id) const
     return make_tuple(title, content);
 }
 
-const char *DBConn::DBError::what() const noexcept
-{
-    return msg.c_str();
-}
-
 }

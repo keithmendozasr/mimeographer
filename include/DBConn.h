@@ -91,6 +91,27 @@ private:
 
 public:
     ////
+    // Exception class for DBConn
+    ////
+    class DBError : public std::exception
+    {
+    private:
+        std::string msg;
+
+    public:
+        ////
+        /// Constructor
+        /// \param msg Error message
+        ////
+        DBError(const std::string &msg) : msg(msg) {};
+
+        const char *what() const noexcept override
+        {
+            return msg.c_str();
+        }
+    };
+
+    ////
     /// Constructor
     /// \param username Login name
     /// \param password DB password
@@ -114,24 +135,6 @@ public:
     typedef std::tuple<std::string, std::vector<std::string>> article;
     enum class articlepart { title, content };
     article getArticle(const std::string &id) const;
-
-    ////
-    // Exception class for DBConn
-    ////
-    class DBError : public std::exception
-    {
-    private:
-        std::string msg;
-
-    public:
-        ////
-        /// Constructor
-        /// \param msg Error message
-        ////
-        DBError(const std::string &msg) : msg(msg) {};
-
-        const char *what() const noexcept override;
-    };
 
 };
 
