@@ -51,12 +51,12 @@ void EditHandler::buildLoginPage(const bool &showMismatch)
     if(showMismatch)
     {
         VLOG(1) << "Showing mismatch banner";
-        prependResponse(IOBuf::copyBuffer(mismatchBanner));
+        prependResponse(mismatchBanner);
     }
     else
         VLOG(1) << "Not showing mismatch banner";
 
-    prependResponse(IOBuf::copyBuffer(html));
+    prependResponse(html);
 }
 
 void EditHandler::processLogin()
@@ -134,7 +134,7 @@ void EditHandler::processRequest()
         
         LOG(INFO) << "User is logged-in";
         if(path == "/edit")
-            prependResponse(IOBuf::copyBuffer("<p>Edit page here</p>"));
+            prependResponse("<p>Edit page here</p>");
         else
         {
             LOG(INFO) << path << "not handled";

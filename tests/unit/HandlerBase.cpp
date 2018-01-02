@@ -120,12 +120,12 @@ TEST_F(HandlerBaseTest, prependResponse)
 
     auto testString = "From empty";
     auto expectedVal = move(IOBuf::copyBuffer(testString));
-    obj.prependResponse(IOBuf::copyBuffer(testString));
+    obj.prependResponse(testString);
     ASSERT_TRUE(equalityOp(obj.handlerResponse, expectedVal));
 
     testString = "Second string";
     expectedVal->prependChain(move(IOBuf::copyBuffer(testString)));
-    obj.prependResponse(IOBuf::copyBuffer(testString));
+    obj.prependResponse(testString);
     ASSERT_TRUE(equalityOp(obj.handlerResponse, expectedVal));
 }
 

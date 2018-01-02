@@ -44,7 +44,7 @@ void PrimaryHandler::buildFrontPage()
         if((data.capacity() - data.size() - line.size()) < 0)
         {
             VLOG(2) << "Loading existing list to buffer";
-            prependResponse(move(IOBuf::copyBuffer(data)));
+            prependResponse(data);
             data = line;
         }
         else
@@ -53,7 +53,7 @@ void PrimaryHandler::buildFrontPage()
             data = data + line;
         }
     }
-    prependResponse(move(IOBuf::copyBuffer(data)));
+    prependResponse(data);
     VLOG(1) << "Front page data processed";
 }
 
@@ -69,10 +69,9 @@ void PrimaryHandler::buildArticlePage()
         try
         {
             auto article = conn.getArticle(id.str());
-            prependResponse(move(IOBuf::copyBuffer(
-                string("<h1>") + get<0>(article) + "</h1>")));
+            prependResponse(string("<h1>") + get<0>(article) + "</h1>");
             for(auto contPart : get<1>(article))
-                prependResponse(move(IOBuf::copyBuffer(contPart)));
+                prependResponse(contPart);
         }
         catch(const range_error &)
         {

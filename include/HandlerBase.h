@@ -19,10 +19,12 @@
 #include <exception>
 #include <fstream>
 #include <boost/optional.hpp>
+#include <utility>
 
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 #include <proxygen/lib/http/experimental/RFC1867.h>
+#include <folly/io/IOBuf.h>
 
 #include "gtest/gtest.h"
 
@@ -98,17 +100,17 @@ private:
 
 protected:
     DBConn connectDb();
-    inline void prependResponse(std::unique_ptr<folly::IOBuf> buf)
+    inline void prependResponse(const std::string &data)
     {
         if(handlerResponse)
         {
             VLOG(3) << "Prepending to existing handlerResponse";
-            handlerResponse->prependChain(move(buf));
+            handlerResponse->prependChain(std::move(folly::IOBuf::copyBuffer(data)));
         }
         else
         {
             VLOG(3) << "Creating new handlerResponse";
-            handlerResponse = move(buf);
+            handlerResponse = std::move(folly::IOBuf::copyBuffer(data));
         }
     }
 
