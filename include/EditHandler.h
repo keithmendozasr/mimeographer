@@ -34,6 +34,7 @@ class EditHandler : public HandlerBase
 private:
     void buildLoginPage(const bool &showMismatch = false);
     void processLogin();
+    void buildMainPage();
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}

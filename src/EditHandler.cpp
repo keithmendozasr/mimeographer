@@ -96,6 +96,15 @@ void EditHandler::processLogin()
     buildLoginPage(true);
 }
 
+void EditHandler::buildMainPage()
+{
+    prependResponse(
+        "<h1>Choose an action</h1>\n" + makeMenuButtons({
+        { "/edit/new", "New Article" },
+        { "/edit/article", "Edit An Article" }
+    }));
+}
+
 void EditHandler::processRequest() 
 {
     auto path = getPath();
@@ -134,7 +143,7 @@ void EditHandler::processRequest()
         
         LOG(INFO) << "User is logged-in";
         if(path == "/edit")
-            prependResponse("<p>Edit page here</p>");
+            buildMainPage();
         else
         {
             LOG(INFO) << path << "not handled";
