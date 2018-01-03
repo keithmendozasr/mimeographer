@@ -28,6 +28,8 @@ namespace mimeographer
 
 class HandlerBaseObj : public HandlerBase
 {
+    FRIEND_TEST(HandlerBaseTest, makeMenuButtons);
+
 private:
     void processRequest() {};
 
@@ -165,6 +167,28 @@ TEST_F(HandlerBaseTest, parseCookies)
         ASSERT_NO_THROW( {
             ASSERT_EQ(obj.cookieJar.at("b"), "bbbb");
         });
+    }
+}
+
+TEST_F(HandlerBaseTest, makeMenuButtons)
+{
+    HandlerBaseObj obj(config);
+    {
+        const string testData =
+            "<a href=\"/edit/link1\" class=\"btn btn-primary\">link 1</a>";
+        vector<pair<string,string>> data = { { "/edit/link1", "link 1"} };
+        ASSERT_EQ(obj.makeMenuButtons(data), testData);
+    }
+
+    {
+        const string testData =
+            "<a href=\"/edit/link1\" class=\"btn btn-primary\">link 1</a>\n"
+            "<a href=\"/edit/link2\" class=\"btn btn-primary\">link 2</a>";
+        vector<pair<string,string>> data = {
+            { "/edit/link1", "link 1"},
+            { "/edit/link2", "link 2"}
+        };
+        ASSERT_EQ(obj.makeMenuButtons(data), testData);
     }
 }
 

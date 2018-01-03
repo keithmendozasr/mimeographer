@@ -213,6 +213,22 @@ void HandlerBase::parseCookies(const string &cookies) noexcept
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
+const string HandlerBase::makeMenuButtons(const vector<pair<string, string>> &links) const
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    string retVal;
+    for(auto i : links)
+    {
+        VLOG(3) << "Creating button for " << i.first << "/" << i.second << "pair";
+        retVal += string(retVal.size() ? "\n" : "") + "<a href=\"" + i.first + "\" class=\"btn btn-primary\">"
+            + i.second + "</a>";
+    }
+    
+    VLOG(1) << "Done crating button set";
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return move(retVal);
+}
+
 void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept 
 {
     LOG(INFO) << "Handling request from " 

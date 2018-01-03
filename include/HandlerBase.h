@@ -20,6 +20,7 @@
 #include <fstream>
 #include <boost/optional.hpp>
 #include <utility>
+#include <vector>
 
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
@@ -33,7 +34,6 @@
 
 namespace mimeographer 
 {
-
 class HandlerBase : public proxygen::RequestHandler 
 {
     FRIEND_TEST(HandlerBaseTest, buildPageHeader);
@@ -41,6 +41,7 @@ class HandlerBase : public proxygen::RequestHandler
     FRIEND_TEST(HandlerBaseTest, prependResponse);
     FRIEND_TEST(HandlerBaseTest, getPostParam);
     FRIEND_TEST(HandlerBaseTest, parseCookies);
+
 protected:
     enum PostParamType
     {
@@ -88,14 +89,13 @@ private:
             parent.postParams.clear();
         }
     };
-
     PostBodyCallback pbCallback;
+
     std::unique_ptr<proxygen::RFC1867Codec> postParser;
+    std::map<std::string, std::string> cookieJar;
 
     std::unique_ptr<folly::IOBuf> buildPageHeader();
     std::unique_ptr<folly::IOBuf> buildPageTrailer();
-
-    std::map<std::string, std::string> cookieJar;
     void parseCookies(const std::string &cookies) noexcept;
 
 protected:
@@ -144,6 +144,14 @@ protected:
 
         return boost::none;
     }
+
+    ////
+    /// Generate HTML for action buttons outside of the navbar
+    /// \param links vector of target/label pairs to generate buttons for
+    /// \return std::string of HTML button codes
+    ////
+    const std::string makeMenuButtons(
+        const std::vector<std::pair<std::string, std::string>> &links) const;
 
 public:
     HandlerBase(const Config &config) : config(config), pbCallback(*this) {};
