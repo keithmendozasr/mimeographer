@@ -134,7 +134,7 @@ DBConn::DBConn(const string &username, const string &password,
 DBConn::headline DBConn::getHeadlines() const
 {
     const static string query =
-        "SELECT id,title,substr(content,0,255) as leadline"
+        "SELECT articleid,title,substr(content,0,255) as leadline"
         " FROM article WHERE publishdate <= NOW()"
         " ORDER BY publishdate";
     auto dbResult = execQuery(query);
@@ -170,7 +170,8 @@ DBConn::headline DBConn::getHeadlines() const
 
 DBConn::article DBConn::getArticle(const string &id) const
 {
-    const static string query = "SELECT title,content FROM article WHERE id=$1";
+    const static string query = "SELECT title,content FROM article "
+        "WHERE articleid=$1";
     auto dbResult = execQuery(query, array<const char *,1>({ id.c_str() }));
 
     VLOG(3) << "Number of articles: " << PQntuples(dbResult.get());
@@ -192,7 +193,7 @@ boost::optional<DBConn::UserRecord> DBConn::getUserInfo(
     const std::string &email)
 {
     const static string query =
-        "SELECT id, fullname, email, salt, password "
+        "SELECT userid, fullname, email, salt, password "
         "FROM users WHERE email=$1 AND isactive";
     auto dbResult = execQuery(query, array<const char *, 1>({ email.c_str() }));
     auto rsltCnt = PQntuples(dbResult.get());
@@ -248,15 +249,15 @@ boost::optional<DBConn::UserRecord> DBConn::getUserInfo(
 
 void DBConn::saveSession(const string &uuid)
 {
-    const static string query = "INSERT INTO session (id) VALUES($1) "
-        "ON CONFLICT (id) DO UPDATE SET last_seen = DEFAULT";
+    const static string query = "INSERT INTO session (sessionid) VALUES($1) "
+        "ON CONFLICT (sessionid) DO UPDATE SET last_seen = DEFAULT";
 
     execQuery(query, array<const char *, 1>({ uuid.c_str() }));
 }
 
 void DBConn::mapUuidToUser(const string &uuid, const int &userId)
 {
-    const static string query = "INSERT INTO user_session(sessionid,userid) "
+    const static string query = "INSERT INTO user_session(sessionid, userid) "
         "VALUES ($1, $2) ON CONFLICT ON CONSTRAINT user_session_pkey DO NOTHING";
 
     execQuery(query, array<const char *,2>({
