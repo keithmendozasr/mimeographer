@@ -23,7 +23,6 @@ CREATE TABLE IF NOT EXISTS extra_user_permissions (
 CREATE TABLE IF NOT EXISTS article (
     articleid SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    markdown TEXT NOT NULL,
     content TEXT NOT NULL,
     userid INT NOT NULL REFERENCES users(userid)
         ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -50,6 +49,6 @@ CREATE TABLE IF NOT EXISTS user_session (
         ON DELETE CASCADE ON UPDATE CASCADE,
     sessionid UUID NOT NULL REFERENCES session(sessionid)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    xsrf UUID,
+    csrfkey UUID,
     PRIMARY KEY(userid,sessionid)
 );

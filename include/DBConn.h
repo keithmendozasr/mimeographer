@@ -184,6 +184,32 @@ public:
     /// \param uuid UUID to retrieve
     ////
     boost::optional<const int> getMappedUser(const std::string &uuid);
+
+    ////
+    /// Save the CSRF key
+    /// \param key CSRF key
+    /// \param userid User ID the CSRF is used for
+    /// \param sessionid Session ID the CSRF is used for
+    ////
+    void saveCSRFKey(const std::string &key, const int &userId,
+        const std::string &sessionid);
+
+    ////
+    /// Retrieve CSRF saved previously
+    /// \param userid User ID whose CSRF is being retrieved
+    /// \param sessionid Session ID whose CSRF is being retrieved
+    ////
+    boost::optional<const std::string> getCSRFKey(const int &userId,
+        const std::string &sessionid);
+
+    ////
+    /// Save an article
+    /// \param userid Author's ID
+    /// \param title Article title
+    /// \param markdown Article markdown
+    ////
+    const int saveArticle(const int &userId, const std::string &title,
+        const std::string &markdown);
 };
 
 }

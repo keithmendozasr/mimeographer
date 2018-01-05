@@ -35,6 +35,7 @@ private:
     DBConn &db;
     std::string uuid;
     boost::optional<int> userId;
+    std::string csrfkey;
 
     std::tuple<std::string, std::string>
         hashPassword(const std::string &pass, const std::string &salt = "");
@@ -67,6 +68,18 @@ public:
     {
         return userId != boost::none;
     }
+
+    ////
+    /// Generate a new CSRF key for the given session
+    ////
+    const std::string genCSRFKey();
+
+    ////
+    /// Verify if CSRF key is correct
+    /// \param csrfkey CSRF key to verify
+    /// \return true if csrfkey is the expected key
+    ////
+    const bool verifyCSRFKey(const std::string &csrfkey);
 };
 
 } // namespace

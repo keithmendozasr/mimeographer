@@ -98,11 +98,117 @@ void EditHandler::processLogin()
 
 void EditHandler::buildMainPage()
 {
+    VLOG(1) << "Render main page";
     prependResponse(
         "<h1>Choose an action</h1>\n" + makeMenuButtons({
         { "/edit/new", "New Article" },
         { "/edit/article", "Edit An Article" }
     }));
+}
+
+void EditHandler::buildEditor(UserSession &session, const std::string &articleId)
+{
+    VLOG(1) << "Render editor";
+    string page = "<h1>New Article</h1>"
+        "<form method=\"post\" action=\"/edit/savearticle\" enctype=\"multipart/form-data\">\n"
+        "<input type=\"hidden\" name=\"csrf\" value=\"" + session.genCSRFKey() + "\">\n";
+
+    if(articleId != "")
+    {
+        VLOG(1) << "Add articleid input field"
+        "<input type=\"hidden\" name=\"articleid\" value=\"" + articleId + "\">\n";
+    }
+    else
+        VLOG(1) << "Not putting articleid inptu field";
+
+    page += "<div class=\"form-group\">\n"
+           "<label for=\"title\">Title</label>\n"
+            "<input type=\"text\" name=\"title\"  id=\"title\" "
+                "class=\"form-control\" maxlength=\"255\" required placeholder=\"Title\"/>\n"
+        "</div>\n"
+        "<div class=\"form-group\">\n"
+            "<label for=\"content\">Content</label>\n"
+            "<textarea name=\"content\" class=\"form-control\"  rows=\"20\" "
+                    "required id=\"content\" placeholder=\"Article content\" "
+                    " maxlength=\"" + to_string(page.max_size()) + "\">\n"
+                "</textarea>\n"
+            "</div>\n"
+            "<button type=\"submit\" class=\"btn btn-primary\">Save</button>\n"
+        "</div>\n"
+        "</form>\n";
+
+    prependResponse(page);
+}
+
+void EditHandler::processSaveArticle(UserSession &session)
+{
+    if(getMethod() != "POST")
+    {
+        LOG(WARNING) << "Unexpecte method \"" << getMethod()
+            << " when saving article";
+        throw HandlerError(405, "Method not allowed");
+    }
+
+    string articleId, title, content;
+    auto param = getPostParam("csrf");
+    if(!param || param->type != PostParamType::VALUE ||
+        !session.verifyCSRFKey(param->value))
+    {
+        LOG(WARNING) << "CSRF mismatch. CSRF provided: " << param->value;
+        throw HandlerError(401, "Unauthorized");
+    }
+    VLOG(1) << "CSRF key validated";
+
+
+    param = getPostParam("title");
+    if(!param || param->type != PostParamType::VALUE)
+    {   
+        LOG(WARNING) << "\"title\" POST param missing or incorrect type";
+        throw HandlerError(400, "Bad Request");
+    }
+    VLOG(1) << "Title present";
+    title = param->value;
+
+    param = getPostParam("content");
+    if(!param || param->type != PostParamType::VALUE)
+    {   
+        LOG(WARNING) << "\"content\" POST param missing or incorrect type";
+        throw HandlerError(400, "Bad Request");
+    }
+    VLOG(1) << "content present";
+    content = param->value;
+    VLOG(3) << "Content: " << content.substr(0, 50);
+
+    // articleid is only needed when editing
+    param = getPostParam("articleid");
+    if(param && param->type == PostParamType::VALUE)
+    {
+        articleId = param->value;
+        for(auto i : articleId)
+        {
+            if(!isdigit(i))
+            {
+                LOG(WARNING) << "Value of articleid POST param, " << articleId
+                    << " is not numeric";
+                throw HandlerError(400, "Bad Request");
+            }
+        }
+        VLOG(2) << "articleid passed validation";
+    }
+    else
+        VLOG(2) << "articleid POST param not provided";
+
+    auto db = connectDb();
+    if(articleId == "")
+    {
+        VLOG(1) << "Save new article to database";
+        auto tmp = db.saveArticle(*(session.getUserId()), title, content);
+        if(tmp)
+            prependResponse(string("<p>New article ID: ") + to_string(tmp)
+                + "</p>");
+    }
+    else
+        prependResponse(string("<p>Implement article update</p>"));
 }
 
 void EditHandler::processRequest() 
@@ -144,6 +250,10 @@ void EditHandler::processRequest()
         LOG(INFO) << "User is logged-in";
         if(path == "/edit")
             buildMainPage();
+        else if(path == "/edit/new")
+            buildEditor(session);
+        else if(path == "/edit/savearticle")
+            processSaveArticle(session);
         else
         {
             LOG(INFO) << path << "not handled";

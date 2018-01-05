@@ -293,7 +293,8 @@ void HandlerBase::onEOM() noexcept
         processRequest();
 
         auto response = buildPageHeader();
-        response->prependChain(move(handlerResponse));
+        if(handlerResponse)
+            response->prependChain(move(handlerResponse));
         response->prependChain(buildPageTrailer());
 
         // Send the response that everything worked out well

@@ -281,4 +281,60 @@ boost::optional<const int> DBConn::getMappedUser(const string &uuid)
     return move(stoi(string(PQgetvalue(dbRslt.get(), 0,0), len)));
 }
 
+void DBConn::saveCSRFKey(const string &key, const int &userId, const string &sessionid)
+{
+    const string query = "UPDATE user_session SET csrfkey = $1 "
+        "WHERE userid = $2 AND sessionid = $3";
+    execQuery(query,
+        array<const char *, 3>({
+            key.c_str(),
+            to_string(userId).c_str(),
+            sessionid.c_str()
+        })
+    );
+}
+
+boost::optional<const string> DBConn::getCSRFKey(const int &userId, const string &sessionid)
+{
+    const string query = "SELECT csrfkey FROM user_session "
+        "WHERE userid = $1 AND sessionid = $2";
+    auto dbRslt = execQuery(query,
+        array<const char *, 2>({
+            to_string(userId).c_str(),
+            sessionid.c_str()
+        })
+    );
+
+    if(PQntuples(dbRslt.get()) == 0)
+    {
+        LOG(WARNING) << "No CSRF found in database for user " << userId
+            << " session " << sessionid;
+        return boost::none;
+    }
+
+    size_t len = PQgetlength(dbRslt.get(), 0, 0);
+    return move(string(PQgetvalue(dbRslt.get(), 0, 0), len));
+}
+
+const int DBConn::saveArticle(const int &userId, const string &title, const string &markdown)
+{
+    const string query = "INSERT INTO article(userid, title, content, publishdate) "
+        "VALUES($1, $2, $3, NOW()) RETURNING articleid";
+    auto dbRslt = execQuery(query,
+        array<const char *, 3>({
+            to_string(userId).c_str(),
+            title.c_str(),
+            markdown.c_str()
+        })
+    );
+
+    if(PQntuples(dbRslt.get()) != 1)
+        throw DBError("More than 1 article ID returned");
+
+    size_t len = PQgetlength(dbRslt.get(), 0, 0);
+    int rslt = stoi(string(PQgetvalue(dbRslt.get(), 0, 0), len));
+    VLOG(3) << "New article's ID: " << rslt;
+    return move(rslt);
+}
+
 } // namespace

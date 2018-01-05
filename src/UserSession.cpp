@@ -130,4 +130,41 @@ const bool UserSession::authenticateLogin(const std::string &email,
     return rslt;
 }
 
+const std::string UserSession::genCSRFKey()
+{
+    if(uuid == "" || !userId)
+        throw logic_error("UUID or User ID not know at CSRF key generation");
+     
+    uuid_t nUUID;
+    uuid_generate_random(nUUID);
+    char cTmp[37];
+    uuid_unparse(nUUID, cTmp);
+
+    string csrf(cTmp);
+    VLOG(3) << "CSRF generated: " << csrf;
+
+    db.saveCSRFKey(csrf, *userId, uuid);
+
+    return move(string(cTmp));
+}
+
+const bool UserSession::verifyCSRFKey(const string &csrfkey)
+{
+    if(!userId)
+    {
+        LOG(WARNING) << "User ID not set when verifying CSRF";
+        return false;
+    }
+    auto expectedKey = db.getCSRFKey(*userId, uuid);
+    if(!expectedKey)
+    {
+        LOG(WARNING) << "No CSRF key associated to user id " << *userId
+            << " session " << uuid;
+        return false;
+    }
+
+    VLOG(3) << "Value of expected key: " << *expectedKey;
+    return *expectedKey == csrfkey;
+}
+
 } // namespace
