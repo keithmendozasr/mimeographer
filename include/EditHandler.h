@@ -36,7 +36,7 @@ private:
     void processLogin();
     void buildMainPage();
     void buildEditor(UserSession &session, const std::string &articleId = "");
-    void processSaveArticle(UserSession &session);
+    void processSaveArticle(UserSession &session, DBConn &dbConn);
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}

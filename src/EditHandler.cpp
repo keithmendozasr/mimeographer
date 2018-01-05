@@ -140,7 +140,7 @@ void EditHandler::buildEditor(UserSession &session, const std::string &articleId
     prependResponse(page);
 }
 
-void EditHandler::processSaveArticle(UserSession &session)
+void EditHandler::processSaveArticle(UserSession &session, DBConn &dbConn)
 {
     if(getMethod() != "POST")
     {
@@ -198,11 +198,10 @@ void EditHandler::processSaveArticle(UserSession &session)
     else
         VLOG(2) << "articleid POST param not provided";
 
-    auto db = connectDb();
     if(articleId == "")
     {
         VLOG(1) << "Save new article to database";
-        auto tmp = db.saveArticle(*(session.getUserId()), title, content);
+        auto tmp = dbConn.saveArticle(*(session.getUserId()), title, content);
         if(tmp)
             prependResponse(string("<p>New article ID: ") + to_string(tmp)
                 + "</p>");
@@ -263,7 +262,7 @@ void EditHandler::processRequest()
         else if(path == "/edit/new")
             buildEditor(session);
         else if(path == "/edit/savearticle")
-            processSaveArticle(session);
+            processSaveArticle(session, dbConn);
         else
         {
             LOG(INFO) << path << "not handled";
