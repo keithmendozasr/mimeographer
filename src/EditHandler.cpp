@@ -227,7 +227,17 @@ void EditHandler::processRequest()
         else if(getMethod() == "GET")
         {
             LOG(INFO) << "Display login page";
-            buildLoginPage();
+            auto dbConn = connectDb();
+            auto sessionId = getCookie("session");
+            VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
+            UserSession session(dbConn, (sessionId ? *sessionId : ""));
+            if(!session.userAuthenticated())
+                buildLoginPage();
+            else
+            {
+                VLOG(1) << "User has active session, proceed to edit home page";
+                throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/edit");
+            }
         }
     }
     else
