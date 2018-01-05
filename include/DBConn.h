@@ -180,10 +180,13 @@ public:
     void mapUuidToUser(const std::string &uuid, const int &userId);
 
     ////
-    /// Return User ID mapped to given session, if one exists
+    /// Return the session ID and associated user id--if any--if the given uuid
+    /// was used in the last hour
     /// \param uuid UUID to retrieve
     ////
-    boost::optional<const int> getMappedUser(const std::string &uuid);
+    typedef boost::optional<std::tuple<std::string,
+        boost::optional<int>>> SessionInfo;
+    SessionInfo getSessionInfo(const std::string &uuid);
 
     ////
     /// Save the CSRF key

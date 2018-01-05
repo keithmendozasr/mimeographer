@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <sstream>
 #include <cctype>
 #include <iomanip>
@@ -36,7 +35,7 @@ const string DBConn::urlEncode(const string &str) const
 
     for(unsigned char ch : str)
     {
-        if(isalpha(ch) || ch == '-' || ch == '.' || ch ==  '_' || ch == '~')
+        if(isalnum(ch) || ch == '-' || ch == '.' || ch ==  '_' || ch == '~')
             buf << ch;
         else
             buf << '%' << uppercase << setw(2) << int(ch) << nouppercase;
@@ -265,10 +264,12 @@ void DBConn::mapUuidToUser(const string &uuid, const int &userId)
     }));
 }
 
-boost::optional<const int> DBConn::getMappedUser(const string &uuid)
+DBConn::SessionInfo DBConn::getSessionInfo(const string &uuid)
 {
-    const static string query = "SELECT userid FROM user_session "
-        "WHERE sessionid = $1";
+    const static string query = "SELECT sessionid, userid "
+        "FROM session LEFT JOIN user_session USING (sessionid) "
+        "WHERE session.sessionid = $1 AND "
+        "last_seen +  interval '1 hour' > NOW()";
     auto dbRslt = execQuery(query, array<const char *,1>({ uuid.c_str() }));
     auto rsltCnt = PQntuples(dbRslt.get());
     if(rsltCnt == 0)
@@ -278,7 +279,22 @@ boost::optional<const int> DBConn::getMappedUser(const string &uuid)
     }
 
     size_t len = PQgetlength(dbRslt.get(), 0,0);
-    return move(stoi(string(PQgetvalue(dbRslt.get(), 0,0), len)));
+    string sessionid(PQgetvalue(dbRslt.get(), 0, 0), len);
+
+    boost::optional<int> userid;
+    if(PQgetisnull(dbRslt.get(), 0, 0))
+    {
+        VLOG(1) << "No user associated with session";
+        userid = boost::none;
+    }
+    else
+    {
+        VLOG(1) << "User associated with session";
+        len = PQgetlength(dbRslt.get(), 0, 1);
+        userid = stoi(string(PQgetvalue(dbRslt.get(), 0, 1), len));
+    }
+
+    return make_tuple(sessionid, userid);
 }
 
 void DBConn::saveCSRFKey(const string &key, const int &userId, const string &sessionid)

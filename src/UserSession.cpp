@@ -21,6 +21,7 @@
 #include <uuid/uuid.h>
 #include <proxygen/lib/utils/Base64.h>
 #include <folly/ssl/OpenSSLHash.h>
+#include <boost/optional/optional_io.hpp>
 
 #include "UserSession.h"
 
@@ -39,25 +40,45 @@ UserSession::UserSession(DBConn &db, const string &uuid) :
     if(uuid == "")
     {
         VLOG(1) << "Generate new UUID";
-        uuid_t nUUID;
-        uuid_generate_random(nUUID);
-        char cTmp[37];
-        uuid_unparse(nUUID, cTmp);
-        this->uuid = cTmp;
+        this->uuid = genUUID();
     }
     else
+    {
         VLOG(1) << "UUID provided";
+        try
+        {
+            VLOG(1) << "Get session data from DB";
+            auto session = db.getSessionInfo(this->uuid);
+            if(session)
+            {
+                VLOG(1) << "Session still active";
+                userId = get<1>(*session);
+                VLOG(1) << "Associated user: " << userId;
+            }
+            else
+            {
+                VLOG(1) << "Session already expired, regenerate a new one";
+                this->uuid = genUUID();
+            }
+
+        }
+        catch (DBConn::DBError &e)
+        {
+            LOG(ERROR) << "DB-related error encountered at user session: "
+                << e.what() << " proceeding as unauthenticated user";
+        }
+    }
 
     try
     {
-        VLOG(1) << "Save UUID to session DB";
+        VLOG(1) << "Refresh session in DB";
         db.saveSession(this->uuid);
-        userId = db.getMappedUser(this->uuid);
     }
     catch (DBConn::DBError &e)
     {
-        LOG(ERROR) << "DB-related error encountered at user session: "
+        LOG(ERROR) << "DB-related error encountered at user session : "
             << e.what() << " proceeding as unauthenticated user";
+        userId = boost::none;
     }
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
@@ -134,18 +155,13 @@ const std::string UserSession::genCSRFKey()
 {
     if(uuid == "" || !userId)
         throw logic_error("UUID or User ID not know at CSRF key generation");
-     
-    uuid_t nUUID;
-    uuid_generate_random(nUUID);
-    char cTmp[37];
-    uuid_unparse(nUUID, cTmp);
-
-    string csrf(cTmp);
+    
+    string csrf = genUUID();
     VLOG(3) << "CSRF generated: " << csrf;
 
     db.saveCSRFKey(csrf, *userId, uuid);
 
-    return move(string(cTmp));
+    return move(csrf);
 }
 
 const bool UserSession::verifyCSRFKey(const string &csrfkey)

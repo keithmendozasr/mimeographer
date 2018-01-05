@@ -102,7 +102,7 @@ TEST_F(DBConnTest, getArticle)
 
 TEST_F(DBConnTest, getUserInfo)
 {
-    const string login = "testuser@example.com";
+    const string login = "a@a.com";
     boost::optional<DBConn::UserRecord> testData;
     ASSERT_NO_THROW({ testData = testConn.getUserInfo(login); });
     ASSERT_TRUE(testData);
@@ -140,8 +140,13 @@ TEST_F(DBConnTest, mapUuidToUser)
 TEST_F(DBConnTest, getMappedUser)
 {
     ASSERT_NO_THROW({
-        ASSERT_EQ(*testConn.getMappedUser(testUUID), testUserId);
-        ASSERT_FALSE(testConn.getMappedUser("11111111-1111-1111-1111-111111111111"));
+        auto session = testConn.getSessionInfo(testUUID);
+        ASSERT_TRUE(session);
+        ASSERT_EQ(get<1>(*session), testUserId);
+    });
+
+    ASSERT_NO_THROW({
+        ASSERT_FALSE(testConn.getSessionInfo("11111111-1111-1111-1111-111111111111"));
     });
 }
 

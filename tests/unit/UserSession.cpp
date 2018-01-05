@@ -39,6 +39,7 @@ TEST_F(UserSessionTest, constructor)
     }
 
     {
+        db.saveSession(testUUID);
         UserSession obj(db, testUUID);
         ASSERT_STREQ(obj.uuid.c_str(), testUUID);
     }

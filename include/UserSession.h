@@ -17,8 +17,10 @@
 
 #include <string>
 #include <tuple>
+#include <utility>
 
 #include <boost/optional.hpp>
+#include <uuid/uuid.h>
 
 #include "DBConn.h"
 
@@ -39,6 +41,17 @@ private:
 
     std::tuple<std::string, std::string>
         hashPassword(const std::string &pass, const std::string &salt = "");
+
+    inline const std::string genUUID() const
+    {
+        uuid_t nUUID;
+        uuid_generate_random(nUUID);
+        char cTmp[37];
+        uuid_unparse(nUUID, cTmp);
+
+        return std::move(cTmp);
+    }
+
 public:
     explicit UserSession(DBConn &db, const std::string &uuid = "");
 
