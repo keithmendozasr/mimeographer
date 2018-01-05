@@ -145,23 +145,22 @@ DBConn::headline DBConn::getHeadlines() const
     headline retVal;
     for(auto i=0; i<rows; i++)
     {
-		array<string, 3> article;
         auto len = PQgetlength(dbResult.get(), i, 0);
         VLOG(2) << "ID length at row " << i << ": " << len;
-        article[(int)headlinepart::id] = string(PQgetvalue(dbResult.get(), i, 0), len);
-        VLOG(2) << "ID: " << article[(int)headlinepart::id];
+        int id = stoi(string(PQgetvalue(dbResult.get(), i, 0), len));
+        VLOG(2) << "ID: " << id;
 
         len = PQgetlength(dbResult.get(), i, 1);
         VLOG(2) << "Title length at row " << i << ": " << len;
-        article[(int)headlinepart::title] = string(PQgetvalue(dbResult.get(), i, 1), len);
-        VLOG(2) << "Title: " << article[(int)headlinepart::title];
+        string title = string(PQgetvalue(dbResult.get(), i, 1), len);
+        VLOG(2) << "Title: " << title;
 
         len = PQgetlength(dbResult.get(), i, 2);
         VLOG(2) << "leadline length at row " << i << ": " << len;
-        article[(int)headlinepart::leadline] = string(PQgetvalue(dbResult.get(), i, 2), len);
-        VLOG(2) << "leadline: " << article[(int)headlinepart::leadline];
+        string leadline = string(PQgetvalue(dbResult.get(), i, 2), len);
+        VLOG(2) << "leadline: " << leadline;
 
-        retVal.push_back(article);
+        retVal.push_back(make_tuple(id, title, leadline));
     }
 
     return move(retVal);
@@ -188,11 +187,10 @@ DBConn::article DBConn::getArticle(const string &id) const
     return move(make_tuple(title, content));
 }
 
-boost::optional<DBConn::UserRecord> DBConn::getUserInfo(
-    const std::string &email)
+DBConn::UserRecord DBConn::getUserInfo(const std::string &email)
 {
     const static string query =
-        "SELECT userid, fullname, email, salt, password "
+        "SELECT userid, fullname, salt, password "
         "FROM users WHERE email=$1 AND isactive";
     auto dbResult = execQuery(query, array<const char *, 1>({ email.c_str() }));
     auto rsltCnt = PQntuples(dbResult.get());
@@ -210,40 +208,30 @@ boost::optional<DBConn::UserRecord> DBConn::getUserInfo(
 
     UserRecord rslt;
     
-    int index = (int)UserParts::id;
-    auto len = PQgetlength(dbResult.get(), 0, index);
-    VLOG(3) <<  "isactive length: " << len;
-    rslt[index] = string(PQgetvalue(dbResult.get(), 0, index), len);
+    auto len = PQgetlength(dbResult.get(), 0, 0);
+    VLOG(3) <<  "userid length: " << len;
+    int userid = stoi(string(PQgetvalue(dbResult.get(), 0, 0), len));
 
-    index = (int)UserParts::fullname;
-    len = PQgetlength(dbResult.get(), 0, index);
+    len = PQgetlength(dbResult.get(), 0, 1);
     VLOG(3) <<  "fullname length: " << len;
-    rslt[index] = string(PQgetvalue(dbResult.get(), 0, index), len);
+    string fullname(PQgetvalue(dbResult.get(), 0, 1), len);
 
-    index = (int)UserParts::email;
-    len = PQgetlength(dbResult.get(), 0, index);
-    VLOG(3) <<  "email length: " << len;
-    rslt[index] = string(PQgetvalue(dbResult.get(), 0, index), len);
+    len = PQgetlength(dbResult.get(), 0, 2);
+    VLOG(3) <<  "salt length: " << len;
+    string salt(PQgetvalue(dbResult.get(), 0, 2), len);
 
-    index = (int)UserParts::salt;
-    len = PQgetlength(dbResult.get(), 0, index);
-    VLOG(3) <<  "password1 length: " << len;
-    rslt[index] = string(PQgetvalue(dbResult.get(), 0, index), len);
-
-    index = (int)UserParts::password;
-    len = PQgetlength(dbResult.get(), 0, index);
-    VLOG(3) <<  "password2 length: " << len;
-    rslt[index] = string(PQgetvalue(dbResult.get(), 0, index), len);
-
+    len = PQgetlength(dbResult.get(), 0, 3);
+    VLOG(3) <<  "password length: " << len;
+    string password(PQgetvalue(dbResult.get(), 0, 3), len);
 
     VLOG(3) << "Record to return:"
-        << "id: \"" << rslt[(int)UserParts::id]
-        << "\"\nfullname: \"" << rslt[(int)UserParts::fullname]
-        << "\"\nemail: \"" << rslt[(int)UserParts::email]
-        << "\"\nsalt: \"" << rslt[(int)UserParts::salt]
-        << "\"\npassword: \"" << rslt[(int)UserParts::password] << "\"";
+        << "id: \"" << userid
+        << "\"\nfullname: \"" << fullname
+        << "\"\nemail: \"" << email
+        << "\"\nsalt: \"" << salt
+        << "\"\npassword: \"" << password << "\"";
 
-    return move(rslt);
+    return make_tuple(userid, fullname, email, salt, password);
 }
 
 void DBConn::saveSession(const string &uuid)

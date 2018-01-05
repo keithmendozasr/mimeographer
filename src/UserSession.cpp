@@ -135,14 +135,14 @@ const bool UserSession::authenticateLogin(const std::string &email,
     {
         VLOG(1) << "User info retrieved from DB";
         auto userInfo = *dbRet;
-        auto hash = hashPassword(password, userInfo[(int)DBConn::UserParts::salt]);
+        auto hash = hashPassword(password, get<3>(userInfo));
         auto savePass = get<0>(hash);
-        if(savePass != userInfo[(int)DBConn::UserParts::password])
+        if(savePass != get<4>(userInfo))
             LOG(INFO) << "Password mismatch";
         else
         {   
             LOG(INFO) << "User authenticated";
-            userId = stoi(userInfo[(int)DBConn::UserParts::id]);
+            userId = get<0>(userInfo);
             db.mapUuidToUser(uuid, *userId);
             rslt = true;
         }

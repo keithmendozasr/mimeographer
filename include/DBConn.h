@@ -18,8 +18,6 @@
 #include <string>
 #include <exception>
 #include <memory>
-#include <vector>
-#include <array>
 #include <tuple>
 
 #include <boost/optional.hpp>
@@ -142,28 +140,22 @@ public:
     ////
     /// Return available articles
     ////
-    typedef std::vector<std::array<std::string, 3>> headline;
-
-    //TODO: Fix the enum name
-    enum class headlinepart { id, title, leadline };
+    typedef std::vector<std::tuple<int, std::string, std::string>> headline;
     headline getHeadlines() const;
 
     ////
     /// Return article specified by id
     ////
     typedef std::tuple<std::string, std::vector<std::string>> article;
-    
-    //TODO: Fix the enum name
-    enum class articlepart { title, content };
     article getArticle(const std::string &id) const;
 
     ////
     /// Retrieve the user info stored from database, if found
     /// \param login User's login to find
     ////
-    typedef std::array<std::string, 5> UserRecord;
-    enum class UserParts { id, fullname, email, salt, password };
-    boost::optional<UserRecord> getUserInfo(const std::string &email);
+    typedef boost::optional<std::tuple<int, std::string, std::string,
+        std::string, std::string>> UserRecord;
+    UserRecord getUserInfo(const std::string &email);
 
     ////
     /// Save session

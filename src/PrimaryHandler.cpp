@@ -18,6 +18,7 @@
 #include <exception>
 #include <utility>
 #include <regex>
+#include <sstream>
 
 #include <glog/logging.h>
 
@@ -38,19 +39,20 @@ void PrimaryHandler::buildFrontPage()
     auto conn = connectDb();
     for(auto article : conn.getHeadlines())
     {
-        auto line = string("<h1><a href=\"/article/") + article[0] + "\">"
-            + article[1] + "</a></h1>\n<p>"
-            + article[2] + "</p>\n" ;
-        if((data.capacity() - data.size() - line.size()) < 0)
+        ostringstream line;
+        line << "<h1><a href=\"/article/" << get<0>(article) << + "\">"
+            << get<1>(article) << "</a></h1>\n<p>"
+            << get<2>(article) << "</p>\n" ;
+        if((data.capacity() - data.size() - line.str().size()) < 0)
         {
             VLOG(2) << "Loading existing list to buffer";
             prependResponse(data);
-            data = line;
+            data = line.str();
         }
         else
         {
             VLOG(2) << "Append line to data buffer";
-            data = data + line;
+            data = data + line.str();
         }
     }
     prependResponse(data);

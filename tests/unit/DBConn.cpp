@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <typeinfo>
 
 #include "DBConn.h"
 #include "gtest/gtest.h"
@@ -64,13 +63,15 @@ TEST_F(DBConnTest, getHeadlines)
     DBConn::headline testData;
     ASSERT_NO_THROW({ testData = testConn.getHeadlines(); });
     ASSERT_EQ(testData.size(), 10);
-    ASSERT_EQ(testData[0][(int)DBConn::headlinepart::id], string("1"));
-    ASSERT_EQ(testData[0][(int)DBConn::headlinepart::title], string("Test 1"));
-    ASSERT_EQ(testData[0][(int)DBConn::headlinepart::leadline], leadline);
+    tuple<int, string, string> data = testData[0];
+    
+    ASSERT_EQ(get<0>(testData[0]), 1);
+    ASSERT_EQ(get<1>(testData[0]), string("Test 1"));
+    ASSERT_EQ(get<2>(testData[0]), leadline);
 
-    ASSERT_EQ(testData[4][(int)DBConn::headlinepart::id], string("5"));
-    ASSERT_EQ(testData[4][(int)DBConn::headlinepart::title], string("Test 5"));
-    ASSERT_EQ(testData[4][(int)DBConn::headlinepart::leadline], leadline);
+    ASSERT_EQ(get<0>(testData[4]), 5);
+    ASSERT_EQ(get<1>(testData[4]), string("Test 5"));
+    ASSERT_EQ(get<2>(testData[4]), leadline);
 }
 
 TEST_F(DBConnTest, getArticle)
@@ -103,16 +104,16 @@ TEST_F(DBConnTest, getArticle)
 TEST_F(DBConnTest, getUserInfo)
 {
     const string login = "a@a.com";
-    boost::optional<DBConn::UserRecord> testData;
+    DBConn::UserRecord testData;
     ASSERT_NO_THROW({ testData = testConn.getUserInfo(login); });
     ASSERT_TRUE(testData);
     auto data = *testData;
 
-    ASSERT_STREQ(data[(int)DBConn::UserParts::id].c_str(), "1");
-    ASSERT_STREQ(data[(int)DBConn::UserParts::fullname].c_str(), "Test user");
-    ASSERT_EQ(data[(int)DBConn::UserParts::email], login);
-    ASSERT_STREQ(data[(int)DBConn::UserParts::salt].c_str(), "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
-    ASSERT_STREQ(data[(int)DBConn::UserParts::password].c_str(), "kt56uQBSTP-bT4ybmGCgsmU48BBx__mcE61X7UsWxpE");
+    ASSERT_EQ(get<0>(data), 1);
+    ASSERT_STREQ(get<1>(data).c_str(), "Test user");
+    ASSERT_EQ(get<2>(data), login);
+    ASSERT_STREQ(get<3>(data).c_str(), "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+    ASSERT_STREQ(get<4>(data).c_str(), "kt56uQBSTP-bT4ybmGCgsmU48BBx__mcE61X7UsWxpE");
 
     ASSERT_NO_THROW({ testData = testConn.getUserInfo("asdf@example.com"); });
     ASSERT_FALSE(testData);
