@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "params.h"
 #include "DBConn.h"
 #include "gtest/gtest.h"
 
@@ -13,7 +14,8 @@ class DBConnTest : public ::testing::Test
 protected:
     const char *testUUID = "4887ebff-f59e-4881-9a90-9bf4b80f415e";
     const int testUserId = 1;
-    DBConn testConn = { "testuser", "123456", "localhost", "mimeographer" };
+    DBConn testConn = { FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbHost,
+        FLAGS_dbName };
 };
 
 TEST_F(DBConnTest, urlEncode)

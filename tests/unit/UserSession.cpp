@@ -17,6 +17,7 @@
 
 #include "gtest/gtest.h"
 
+#include "params.h"
 #include "UserSession.h"
 
 using namespace std;
@@ -28,7 +29,7 @@ class UserSessionTest : public ::testing::Test
 {
 protected:
     const char *testUUID = "4887ebff-f59e-4881-9a90-9bf4b80f415e";
-    DBConn db = { "testuser", "123456", "localhost", "mimeographer" };
+    DBConn db = { FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbHost, FLAGS_dbName };
 };
 
 TEST_F(UserSessionTest, constructor)

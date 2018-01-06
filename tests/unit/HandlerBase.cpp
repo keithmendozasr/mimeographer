@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "gtest/gtest.h"
 
 #include <folly/io/IOBuf.h>
 
+#include "params.h"
 #include "HandlerBase.h"
 
 using namespace std;
@@ -42,7 +42,8 @@ class HandlerBaseTest : public ::testing::Test
 protected:
     Config config;
     HandlerBaseTest() :
-        config("localhost", "", "", "mimeographer", 5432, "/tmp", "localhost")
+        config(FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName,
+            FLAGS_dbPort, "/tmp", "localhost")
     {}
 };
 
