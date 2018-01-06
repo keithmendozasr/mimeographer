@@ -68,7 +68,6 @@ void EditHandler::processLogin()
     if(login && pass && 
         login->type == PostParamType::VALUE && pass->type == PostParamType::VALUE)
     {
-        auto dbConn = connectDb();
         auto uuid = getCookie(cookieName);
         if(!uuid)
             uuid = "";
@@ -78,7 +77,7 @@ void EditHandler::processLogin()
             << "\n\tPassword: NOT PRINTED"
             << "\n\tUUID from cookie: " << *uuid;
 
-        UserSession session(dbConn, *uuid);
+        UserSession session(db, *uuid);
         VLOG(1) << "Check provided credential";
         if(session.authenticateLogin(login->value, pass->value))
         {
@@ -140,7 +139,7 @@ void EditHandler::buildEditor(UserSession &session, const std::string &articleId
     prependResponse(page);
 }
 
-void EditHandler::processSaveArticle(UserSession &session, DBConn &dbConn)
+void EditHandler::processSaveArticle(UserSession &session)
 {
     if(getMethod() != "POST")
     {
@@ -201,7 +200,7 @@ void EditHandler::processSaveArticle(UserSession &session, DBConn &dbConn)
     if(articleId == "")
     {
         VLOG(1) << "Save new article to database";
-        auto tmp = dbConn.saveArticle(*(session.getUserId()), title, content);
+        auto tmp = db.saveArticle(*(session.getUserId()), title, content);
         if(tmp)
             prependResponse(string("<p>New article ID: ") + to_string(tmp)
                 + "</p>");
@@ -226,10 +225,9 @@ void EditHandler::processRequest()
         else if(getMethod() == "GET")
         {
             LOG(INFO) << "Display login page";
-            auto dbConn = connectDb();
             auto sessionId = getCookie("session");
             VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
-            UserSession session(dbConn, (sessionId ? *sessionId : ""));
+            UserSession session(db, (sessionId ? *sessionId : ""));
             if(!session.userAuthenticated())
                 buildLoginPage();
             else
@@ -243,10 +241,9 @@ void EditHandler::processRequest()
     {
         VLOG(1) << "Not /edit/login";
 
-        auto dbConn = connectDb();
         auto sessionId = getCookie("session");
         VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
-        UserSession session(dbConn, (sessionId ? *sessionId : ""));
+        UserSession session(db, (sessionId ? *sessionId : ""));
         if(!session.userAuthenticated())
         {
             LOG(INFO) << "Redirect to login page";
@@ -262,7 +259,7 @@ void EditHandler::processRequest()
         else if(path == "/edit/new")
             buildEditor(session);
         else if(path == "/edit/savearticle")
-            processSaveArticle(session, dbConn);
+            processSaveArticle(session);
         else
         {
             LOG(INFO) << path << "not handled";

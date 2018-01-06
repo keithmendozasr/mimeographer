@@ -36,8 +36,7 @@ void PrimaryHandler::buildFrontPage()
 {
     VLOG(1) << "DB connection established";
     string data;
-    auto conn = connectDb();
-    for(auto article : conn.getHeadlines())
+    for(auto article : db.getHeadlines())
     {
         ostringstream line;
         line << "<h1><a href=\"/article/" << get<0>(article) << + "\">"
@@ -67,10 +66,9 @@ void PrimaryHandler::buildArticlePage()
     {
         ssub_match id = match[1];
         VLOG(2) << "Article id: " << id.str();
-        auto conn = connectDb();
         try
         {
-            auto article = conn.getArticle(id.str());
+            auto article = db.getArticle(id.str());
             prependResponse(string("<h1>") + get<0>(article) + "</h1>");
             for(auto contPart : get<1>(article))
                 prependResponse(contPart);

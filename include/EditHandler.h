@@ -22,7 +22,6 @@
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-#include "Config.h"
 #include "HandlerBase.h"
 #include "UserSession.h"
 
@@ -36,7 +35,7 @@ private:
     void processLogin();
     void buildMainPage();
     void buildEditor(UserSession &session, const std::string &articleId = "");
-    void processSaveArticle(UserSession &session, DBConn &dbConn);
+    void processSaveArticle(UserSession &session);
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}

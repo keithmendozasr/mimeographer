@@ -120,12 +120,6 @@ void HandlerBase::PostBodyCallback::onFileEnd(bool end, uint64_t postBytesProces
     }
 }
 
-DBConn HandlerBase::connectDb()
-{
-    return move(DBConn(config.dbUser, config.dbPass, config.dbHost,
-        config.dbName, config.dbPort));
-}
-
 unique_ptr<IOBuf> HandlerBase::buildPageHeader() 
 {
     static const string templateHeader = 
@@ -228,6 +222,12 @@ const string HandlerBase::makeMenuButtons(const vector<pair<string, string>> &li
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(retVal);
 }
+
+HandlerBase::HandlerBase(const Config &config) : config(config),
+    pbCallback(*this),
+    db(config.dbUser, config.dbPass, config.dbHost, config.dbName,
+        config.dbPort)
+{}
 
 void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept 
 {

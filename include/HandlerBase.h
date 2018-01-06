@@ -99,7 +99,8 @@ private:
     void parseCookies(const std::string &cookies) noexcept;
 
 protected:
-    DBConn connectDb();
+    DBConn db;
+
     inline void prependResponse(const std::string &data)
     {
         if(handlerResponse)
@@ -154,8 +155,7 @@ protected:
         const std::vector<std::pair<std::string, std::string>> &links) const;
 
 public:
-    HandlerBase(const Config &config) : config(config), pbCallback(*this) {};
-
+    HandlerBase(const Config &config);
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
             noexcept override;
 
