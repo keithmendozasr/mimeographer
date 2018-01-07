@@ -30,6 +30,7 @@ using folly::SocketAddress;
 using Protocol = HTTPServer::Protocol;
 
 DEFINE_int32(http_port, 11000, "Port to listen on with HTTP protocol");
+DEFINE_int32(http2_port, 11002, "HTTP2 listen port");
 DEFINE_string(ip, "localhost", "IP/Hostname to bind to");
 DEFINE_int32(threads, 0, "Number of threads to listen on. Numbers <= 0 "
              "will use the number of cores on this machine.");
@@ -40,6 +41,8 @@ DEFINE_string(dbName, "mimeographer", "Database name");
 DEFINE_int32(dbPort, 5432, "DB server port");
 DEFINE_string(uploadDest, "/tmp", "Folder to save uploaded files to");
 DEFINE_string(hostName, "localhost", "Hostname mimeograph will use");
+DEFINE_string(sslcert, "", "SSL Certificate");
+DEFINE_string(sslkey, "", "SSL Private key");
 
 namespace mimeographer 
 {
@@ -87,10 +90,17 @@ int main(int argc, char* argv[])
 {
     folly::init(&argc, &argv, true);
 
-    std::vector<HTTPServer::IPConfig> IPs = 
-    {
-        { SocketAddress(FLAGS_ip, FLAGS_http_port, true), Protocol::HTTP }
-    };
+    wangle::SSLContextConfig sslConfig;
+    sslConfig.isDefault = true;
+    sslConfig.setCertificate(FLAGS_sslcert, FLAGS_sslkey, "");
+
+    HTTPServer::IPConfig ipConfig(
+        SocketAddress(FLAGS_ip, FLAGS_http_port, true), Protocol::HTTP
+    );
+    ipConfig.sslConfigs.push_back(sslConfig);
+
+    std::vector<HTTPServer::IPConfig> IPs;
+    IPs.push_back(ipConfig);
 
     if (FLAGS_threads <= 0) 
     {
