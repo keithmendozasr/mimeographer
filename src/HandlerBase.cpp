@@ -344,8 +344,10 @@ void HandlerBase::onEOM() noexcept
     catch (const HandlerError &err)
     {
         auto response = buildPageHeader();
-        response->prependChain(IOBuf::copyBuffer(err.what()));
-        buildPageTrailer();
+        ostringstream msg;
+        msg << "<p>" << err.what() << "</p>";
+        response->prependChain(IOBuf::copyBuffer(msg.str()));
+        response->prependChain(buildPageTrailer());
 
         builder.status(err.getCode(), err.what())
             .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
