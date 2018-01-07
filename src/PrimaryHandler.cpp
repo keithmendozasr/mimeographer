@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <string>
 #include <exception>
 #include <utility>
 #include <regex>
 #include <sstream>
+#include <cstdlib>
 
 #include <glog/logging.h>
+#include <cmark.h>
 
 #include "PrimaryHandler.h"
 #include "HandlerError.h"
@@ -40,8 +41,15 @@ void PrimaryHandler::buildFrontPage()
     {
         ostringstream line;
         line << "<h1><a href=\"/article/" << get<0>(article) << + "\">"
-            << get<1>(article) << "</a></h1>\n<p>"
-            << get<2>(article) << "</p>\n" ;
+            << get<1>(article) << "</a></h1>\n<div class=\"col col-12\" >";
+
+        {
+            auto str = get<2>(article);
+            auto tmp = cmark_markdown_to_html(str.c_str(), str.size(), CMARK_OPT_DEFAULT);
+            line << tmp << "</div>\n" ;
+            free(tmp);
+        }
+
         if((data.capacity() - data.size() - line.str().size()) < 0)
         {
             VLOG(2) << "Loading existing list to buffer";
@@ -70,7 +78,10 @@ void PrimaryHandler::buildArticlePage()
         {
             auto article = db.getArticle(id.str());
             prependResponse(string("<h1>") + get<0>(article) + "</h1>");
-            prependResponse(get<1>(article));
+            auto tmp = get<1>(article);
+            auto body = cmark_markdown_to_html(tmp.c_str(), tmp.size(), CMARK_OPT_DEFAULT);
+            prependResponse(string(body));
+            free(body);
         }
         catch(const range_error &)
         {
