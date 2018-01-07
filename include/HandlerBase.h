@@ -31,6 +31,7 @@
 
 #include "Config.h"
 #include "DBConn.h"
+#include "UserSession.h"
 
 namespace mimeographer 
 {
@@ -100,6 +101,7 @@ private:
 
 protected:
     DBConn db;
+    UserSession session;
 
     inline void prependResponse(const std::string &data)
     {

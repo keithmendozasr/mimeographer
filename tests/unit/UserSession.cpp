@@ -30,20 +30,34 @@ class UserSessionTest : public ::testing::Test
 protected:
     const char *testUUID = "4887ebff-f59e-4881-9a90-9bf4b80f415e";
     DBConn db = { FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbHost, FLAGS_dbName };
+
+    void resetSessionTable()
+    {
+        try
+        {
+            (void)db.execQuery("TRUNCATE session CASCADE");
+        }
+        catch(...)
+        {
+            LOG(WARNING) << "Exception encountered at " << __PRETTY_FUNCTION__;
+        }
+    }
 };
 
 TEST_F(UserSessionTest, constructor)
 {
-    {
-        UserSession obj(db);
-        ASSERT_STRNE(obj.uuid.c_str(), "");
-    }
+    UserSession obj(db);
+    ASSERT_STREQ(obj.uuid.c_str(), "");
+}
 
-    {
+TEST_F(UserSessionTest, initSession)
+{
+    ASSERT_NO_THROW({
         db.saveSession(testUUID);
-        UserSession obj(db, testUUID);
+        UserSession obj(db);
+        obj.initSession(testUUID);
         ASSERT_STREQ(obj.uuid.c_str(), testUUID);
-    }
+    });
 }
 
 TEST_F(UserSessionTest, hashPassword)
@@ -59,32 +73,35 @@ TEST_F(UserSessionTest, hashPassword)
 
 TEST_F(UserSessionTest, authenticateLogin)
 {
-    {
+    ASSERT_NO_THROW({
         UserSession obj(db);
+        obj.initSession(testUUID);
         ASSERT_TRUE(obj.authenticateLogin("a@a.com", "123456"));
-        ASSERT_NO_THROW({
-            ASSERT_EQ(obj.userId.value(), 1);
-        });
-    }
+        ASSERT_EQ(obj.userId.value(), 1);
+    });
 
-    {
+    ASSERT_NO_THROW({
         UserSession obj(db);
         ASSERT_FALSE(obj.authenticateLogin("blank@example.com", "123456"));
         ASSERT_FALSE(obj.userId);
-    }
+    });
 }
 
 TEST_F(UserSessionTest, userAuthenticated)
 {
     {
+        resetSessionTable();
+        db.saveSession(testUUID);
         UserSession obj(db);
+        obj.initSession(testUUID);
         ASSERT_FALSE(obj.userAuthenticated());
         obj.authenticateLogin("a@a.com", "123456");
         ASSERT_TRUE(obj.userAuthenticated());
     }
 
     {
-        UserSession obj(db, testUUID);
+        UserSession obj(db);
+        obj.initSession(testUUID);
         ASSERT_TRUE(obj.userAuthenticated());
     }
 }

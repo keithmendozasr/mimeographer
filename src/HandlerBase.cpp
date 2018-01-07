@@ -226,7 +226,8 @@ const string HandlerBase::makeMenuButtons(const vector<pair<string, string>> &li
 HandlerBase::HandlerBase(const Config &config) : config(config),
     pbCallback(*this),
     db(config.dbUser, config.dbPass, config.dbHost, config.dbName,
-        config.dbPort)
+        config.dbPort),
+    session(db)
 {}
 
 void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept 
@@ -265,6 +266,20 @@ void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept
             return false;
         });
     this->requestHeaders = move(headers);
+
+    VLOG(1) << "Initialize session";
+    auto uuid = getCookie("session");
+    if(uuid)
+    {
+        VLOG(2) << "Session cookie available";
+        session.initSession(*uuid);
+    }
+    else
+    {
+        VLOG(2) << "Session cookie not available";
+        session.initSession();
+    }
+    addCookie("session", session.getUUID());
 }
 
 void HandlerBase::onEOM() noexcept 

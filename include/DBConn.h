@@ -34,10 +34,11 @@ namespace mimeographer
 ////
 class DBConn 
 {
-    friend class DBConnTest;
     FRIEND_TEST(DBConnTest, urlEncode);
     FRIEND_TEST(DBConnTest, constructor);
     FRIEND_TEST(DBConnTest, splitString);
+    
+    friend class UserSessionTest;
 
 private:
     // This is here for the unit tester

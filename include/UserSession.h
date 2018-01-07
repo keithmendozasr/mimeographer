@@ -30,6 +30,7 @@ namespace mimeographer
 class UserSession
 {
     FRIEND_TEST(UserSessionTest, constructor);
+    FRIEND_TEST(UserSessionTest, initSession);
     FRIEND_TEST(UserSessionTest, hashPassword);
     FRIEND_TEST(UserSessionTest, authenticateLogin);
 
@@ -53,7 +54,9 @@ private:
     }
 
 public:
-    explicit UserSession(DBConn &db, const std::string &uuid = "");
+    explicit UserSession(DBConn &db);
+    
+    void initSession(const std::string &uuid = "");
 
     inline const std::string &getUUID() const
     {

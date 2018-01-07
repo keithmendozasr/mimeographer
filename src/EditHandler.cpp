@@ -23,7 +23,6 @@
 #include "EditHandler.h"
 #include "HandlerError.h"
 #include "HandlerRedirect.h"
-#include "UserSession.h"
 
 using namespace std;
 using namespace proxygen;
@@ -77,7 +76,6 @@ void EditHandler::processLogin()
             << "\n\tPassword: NOT PRINTED"
             << "\n\tUUID from cookie: " << *uuid;
 
-        UserSession session(db, *uuid);
         VLOG(1) << "Check provided credential";
         if(session.authenticateLogin(login->value, pass->value))
         {
@@ -105,7 +103,7 @@ void EditHandler::buildMainPage()
     }));
 }
 
-void EditHandler::buildEditor(UserSession &session, const std::string &articleId)
+void EditHandler::buildEditor(const std::string &articleId)
 {
     VLOG(1) << "Render editor";
     string page = "<h1>New Article</h1>"
@@ -139,7 +137,7 @@ void EditHandler::buildEditor(UserSession &session, const std::string &articleId
     prependResponse(page);
 }
 
-void EditHandler::processSaveArticle(UserSession &session)
+void EditHandler::processSaveArticle()
 {
     if(getMethod() != "POST")
     {
@@ -227,7 +225,6 @@ void EditHandler::processRequest()
             LOG(INFO) << "Display login page";
             auto sessionId = getCookie("session");
             VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
-            UserSession session(db, (sessionId ? *sessionId : ""));
             if(!session.userAuthenticated())
                 buildLoginPage();
             else
@@ -243,7 +240,6 @@ void EditHandler::processRequest()
 
         auto sessionId = getCookie("session");
         VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
-        UserSession session(db, (sessionId ? *sessionId : ""));
         if(!session.userAuthenticated())
         {
             LOG(INFO) << "Redirect to login page";
@@ -257,9 +253,9 @@ void EditHandler::processRequest()
         if(path == "/edit")
             buildMainPage();
         else if(path == "/edit/new")
-            buildEditor(session);
+            buildEditor();
         else if(path == "/edit/savearticle")
-            processSaveArticle(session);
+            processSaveArticle();
         else
         {
             LOG(INFO) << path << "not handled";

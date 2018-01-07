@@ -34,8 +34,8 @@ private:
     void buildLoginPage(const bool &showMismatch = false);
     void processLogin();
     void buildMainPage();
-    void buildEditor(UserSession &session, const std::string &articleId = "");
-    void processSaveArticle(UserSession &session);
+    void buildEditor(const std::string &articleId = "");
+    void processSaveArticle();
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}

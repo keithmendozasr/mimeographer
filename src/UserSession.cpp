@@ -33,8 +33,11 @@ using namespace folly::ssl;
 namespace mimeographer
 {
 
-UserSession::UserSession(DBConn &db, const string &uuid) :
-    db(db), uuid(uuid)
+UserSession::UserSession(DBConn &db) :
+    db(db)
+{}
+
+void UserSession::initSession(const std::string &uuid)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
     if(uuid == "")
@@ -45,6 +48,7 @@ UserSession::UserSession(DBConn &db, const string &uuid) :
     else
     {
         VLOG(1) << "UUID provided";
+        this->uuid = uuid;
         try
         {
             VLOG(1) << "Get session data from DB";

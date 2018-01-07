@@ -270,7 +270,7 @@ DBConn::SessionInfo DBConn::getSessionInfo(const string &uuid)
     string sessionid(PQgetvalue(dbRslt.get(), 0, 0), len);
 
     boost::optional<int> userid;
-    if(PQgetisnull(dbRslt.get(), 0, 0))
+    if(PQgetisnull(dbRslt.get(), 0, 1))
     {
         VLOG(1) << "No user associated with session";
         userid = boost::none;
