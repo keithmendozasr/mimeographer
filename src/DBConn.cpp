@@ -82,24 +82,6 @@ unique_ptr<PGresult, DBConn::PGresultCleaner> DBConn::execQuery(
     return move(unique_ptr<PGresult, PGresultCleaner>(tmp));
 }
 
-vector<string> DBConn::splitString(char const *const str,
-    const size_t &strLen, const size_t &capacity) const
-{
-    vector<string> retVal;
-    VLOG(3) << __PRETTY_FUNCTION__ << " start. String length: " << strLen
-        << " Capacity: " << capacity;
-    for(size_t i=0; i<strLen; i+= capacity)
-    {
-        VLOG(3) << "Value of i: " << i;
-        auto copysize = (strLen - i) < capacity ? (strLen-i) : capacity;
-        VLOG(3) << "Value of copysize: " << copysize;
-        retVal.push_back(move(string(&str[i],copysize)));
-    }
-
-    VLOG(3) << __PRETTY_FUNCTION__ << " end";
-    return move(retVal);
-}
-
 DBConn::DBConn(const string &username, const string &password,
     const string &dbHost, const string &dbName, const unsigned short port)
 {
@@ -182,7 +164,7 @@ DBConn::article DBConn::getArticle(const string &id) const
 
     len = PQgetlength(dbResult.get(),0,1);
     VLOG(3) << "Content length: " << len;
-    auto content = splitString((char const *const)PQgetvalue(dbResult.get(), 0,1), len);
+    auto content = string(PQgetvalue(dbResult.get(), 0,1), len);
 
     return move(make_tuple(title, content));
 }

@@ -36,6 +36,8 @@ private:
     void buildMainPage();
     void buildEditor(const std::string &articleId = "");
     void processSaveArticle();
+    void buildEditSelect();
+    void processEditArticle();
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}

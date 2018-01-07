@@ -104,36 +104,50 @@ void EditHandler::buildMainPage()
 }
 
 void EditHandler::buildEditor(const std::string &articleId)
-{
+{   
+    string title;
+    string body;
+    if(articleId != "")
+    {
+        VLOG(1) << "Retrieve article from database";
+        auto article = db.getArticle(articleId);
+        title = get<0>(article);
+        body = get<1>(article);
+    }
+
     VLOG(1) << "Render editor";
     string page = "<h1>New Article</h1>"
         "<form method=\"post\" action=\"/edit/savearticle\" enctype=\"multipart/form-data\">\n"
-        "<input type=\"hidden\" name=\"csrf\" value=\"" + session.genCSRFKey() + "\">\n";
+            "<input type=\"hidden\" name=\"csrf\" value=\"" + session.genCSRFKey() + "\">\n";
 
     if(articleId != "")
     {
-        VLOG(1) << "Add articleid input field"
-        "<input type=\"hidden\" name=\"articleid\" value=\"" + articleId + "\">\n";
+        VLOG(1) << "Add articleid input field";
+        page +=
+            "<input type=\"hidden\" name=\"articleid\" value=\"" + articleId + "\">\n";
     }
     else
         VLOG(1) << "Not putting articleid inptu field";
 
-    page += "<div class=\"form-group\">\n"
-           "<label for=\"title\">Title</label>\n"
-            "<input type=\"text\" name=\"title\"  id=\"title\" "
-                "class=\"form-control\" maxlength=\"255\" required placeholder=\"Title\"/>\n"
-        "</div>\n"
-        "<div class=\"form-group\">\n"
-            "<label for=\"content\">Content</label>\n"
-            "<textarea name=\"content\" class=\"form-control\"  rows=\"20\" "
+    page +=
+            "<div class=\"form-group\">\n"
+                "<label for=\"title\">Title</label>\n"
+                "<input type=\"text\" name=\"title\"  id=\"title\" "
+                    "class=\"form-control\" maxlength=\"255\" required placeholder=\"Title\" "
+                    "value=\"" + title + "\" />\n"
+            "</div>\n"
+            "<div class=\"form-group\">\n"
+                "<label for=\"content\">Content</label>\n"
+                "<textarea name=\"content\" class=\"form-control\"  rows=\"20\" "
                     "required id=\"content\" placeholder=\"Article content\" "
-                    " maxlength=\"" + to_string(page.max_size()) + "\">\n"
+                    "maxlength=\"" + to_string(page.max_size()) + "\">\n";
+    prependResponse(page);
+    prependResponse(body);
+    page = 
                 "</textarea>\n"
             "</div>\n"
             "<button type=\"submit\" class=\"btn btn-primary\">Save</button>\n"
-        "</div>\n"
         "</form>\n";
-
     prependResponse(page);
 }
 
@@ -207,6 +221,50 @@ void EditHandler::processSaveArticle()
         prependResponse(string("<p>Implement article update</p>"));
 }
 
+void EditHandler::buildEditSelect()
+{
+    VLOG(1) << "Build article list";
+
+    string data;
+    for(auto article : db.getHeadlines())
+    {
+        ostringstream line;
+        line << "<div class=\"row\">\n"
+             "<div class=\"col\"><a href=\"/edit/article/"
+                << get<0>(article) << + "\">" << get<1>(article) << "</a></div>\n"
+            << "<div class=\"col-11\">" << get<2>(article) << "</div>\n</div>\n";
+        if((data.capacity() - data.size() - line.str().size()) < 0)
+        {
+            VLOG(2) << "Loading existing list to buffer";
+            prependResponse(data);
+            data = line.str();
+        }
+        else
+        {
+            VLOG(2) << "Append line to data buffer";
+            data = data + line.str();
+        }
+    }
+    prependResponse(data);
+}
+
+void EditHandler::processEditArticle()
+{
+    static regex parser("/edit/article/(\\d+)");
+    smatch match;
+    if(regex_match(getPath(), match, parser))
+    {
+        auto id = match[1];
+        VLOG(2) << "Article id: " << id.str();
+        buildEditor(id.str());
+    }
+    else
+    {
+        LOG(WARNING) << "Path didn't parse";
+        throw HandlerError(404, "File not found");
+    }
+}
+
 void EditHandler::processRequest() 
 {
     auto path = getPath();
@@ -256,6 +314,8 @@ void EditHandler::processRequest()
             buildEditor();
         else if(path == "/edit/savearticle")
             processSaveArticle();
+        else if(path.substr(0, strlen("/edit/article")) == "/edit/article")
+            processEditArticle();
         else
         {
             LOG(INFO) << path << "not handled";

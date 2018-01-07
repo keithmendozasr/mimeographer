@@ -70,8 +70,7 @@ void PrimaryHandler::buildArticlePage()
         {
             auto article = db.getArticle(id.str());
             prependResponse(string("<h1>") + get<0>(article) + "</h1>");
-            for(auto contPart : get<1>(article))
-                prependResponse(contPart);
+            prependResponse(get<1>(article));
         }
         catch(const range_error &)
         {

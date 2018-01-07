@@ -27,16 +27,6 @@ TEST_F(DBConnTest, urlEncode)
     EXPECT_EQ(conn.urlEncode("/blah %"), string("%2Fblah%20%25"));
 }
 
-TEST_F(DBConnTest, splitString)
-{   
-    DBConn conn;
-    auto rslt = conn.splitString("abcdefghij", 10, 2);
-    ASSERT_EQ(rslt.size(), 5);
-    ASSERT_STREQ(rslt[0].c_str(), "ab");
-    ASSERT_STREQ(rslt[2].c_str(), "ef");
-    ASSERT_STREQ(rslt[4].c_str(), "ij");
-}
-
 TEST_F(DBConnTest, constructor)
 {
     ASSERT_THROW({
@@ -99,8 +89,7 @@ TEST_F(DBConnTest, getArticle)
     ASSERT_STREQ(get<0>(testData).c_str(), "Test 1");
 
     auto testContent = get<1>(testData);
-    ASSERT_EQ(testContent.size(), 1);
-    ASSERT_EQ(testContent[0], content);
+    ASSERT_EQ(testContent, content);
 }
 
 TEST_F(DBConnTest, getUserInfo)

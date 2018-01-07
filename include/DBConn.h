@@ -94,17 +94,6 @@ private:
     std::unique_ptr<PGresult, PGresultCleaner> execQuery(
         const std::string &query, std::array<const char *, S> params) const;
 
-    ////
-    /// Split a "string" to a vector of std::string
-    /// \param str string to separate into vectors
-    /// \param strLen length of str
-    /// \param capacity Length to split strings in
-    ///     (default to std::string::capacity())
-    ////
-    std::vector<std::string> splitString(char const * const str,
-        const size_t &strLen,
-        const size_t &capacity = std::string().max_size()) const;
-
 public:
     ////
     /// Exception class for DBConn
@@ -147,7 +136,7 @@ public:
     ////
     /// Return article specified by id
     ////
-    typedef std::tuple<std::string, std::vector<std::string>> article;
+    typedef std::tuple<std::string, std::string> article;
     article getArticle(const std::string &id) const;
 
     ////
