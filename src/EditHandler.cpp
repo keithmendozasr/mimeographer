@@ -218,7 +218,11 @@ void EditHandler::processSaveArticle()
                 + "</p>");
     }
     else
-        prependResponse(string("<p>Implement article update</p>"));
+    {
+        VLOG(1) << "Save article " << articleId << " updates";
+        db.updateArticle(*(session.getUserId()), title, content, articleId);
+        prependResponse(string("<p>Article updated</p>"));
+    }
 }
 
 void EditHandler::buildEditSelect()
@@ -260,8 +264,13 @@ void EditHandler::processEditArticle()
     }
     else
     {
-        LOG(WARNING) << "Path didn't parse";
-        throw HandlerError(404, "File not found");
+        if(getPath() == "/edit/article")
+            buildEditSelect();
+        else
+        {
+            LOG(WARNING) << "Path didn't parse";
+            throw HandlerError(404, "File not found");
+        }
     }
 }
 

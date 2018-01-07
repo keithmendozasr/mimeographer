@@ -195,6 +195,16 @@ public:
     ////
     const int saveArticle(const int &userId, const std::string &title,
         const std::string &markdown);
+
+    ////
+    /// Update an article
+    /// \param userid Author's ID
+    /// \param title Article title
+    /// \param markdown Article markdown
+    /// \param articleId Aricle Id to update
+    ////
+    void updateArticle(const int &userId, const std::string &title,
+        const std::string &markdown, const std::string &articleId);
 };
 
 }

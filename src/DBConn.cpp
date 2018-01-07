@@ -323,4 +323,21 @@ const int DBConn::saveArticle(const int &userId, const string &title, const stri
     return move(rslt);
 }
 
+void DBConn::updateArticle(const int &userId, const string &title,
+    const string &markdown, const string &articleId)
+{
+    const string query = "UPDATE article SET userid = $1, title = $2, "
+        "content = $3, savedate = NOW() WHERE articleid = $4";
+    execQuery(query,
+        array<const char *, 4>({
+            to_string(userId).c_str(),
+            title.c_str(),
+            markdown.c_str(),
+            articleId.c_str()
+        })
+    );
+
+    VLOG(1) << "Article " << articleId << " updated";
+}
+
 } // namespace
