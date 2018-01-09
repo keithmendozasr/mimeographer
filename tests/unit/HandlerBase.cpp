@@ -43,7 +43,7 @@ protected:
     Config config;
     HandlerBaseTest() :
         config(FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName,
-            FLAGS_dbPort, "/tmp", "localhost")
+            FLAGS_dbPort, "/tmp", "localhost", "/tmp")
     {}
 };
 

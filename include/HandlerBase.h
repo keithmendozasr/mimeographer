@@ -43,6 +43,8 @@ class HandlerBase : public proxygen::RequestHandler
     FRIEND_TEST(HandlerBaseTest, getPostParam);
     FRIEND_TEST(HandlerBaseTest, parseCookies);
 
+    friend class StaticHandler;
+
 protected:
     enum PostParamType
     {
@@ -51,7 +53,6 @@ protected:
     };
 
 private:
-    const Config &config;
     std::unique_ptr<folly::IOBuf> handlerResponse;
     std::unique_ptr<proxygen::HTTPMessage> requestHeaders;
 
@@ -100,6 +101,7 @@ private:
     void parseCookies(const std::string &cookies) noexcept;
 
 protected:
+    const Config &config;
     DBConn db;
     UserSession session;
 

@@ -223,8 +223,9 @@ const string HandlerBase::makeMenuButtons(const vector<pair<string, string>> &li
     return move(retVal);
 }
 
-HandlerBase::HandlerBase(const Config &config) : config(config),
+HandlerBase::HandlerBase(const Config &config) :
     pbCallback(*this),
+    config(config),
     db(config.dbUser, config.dbPass, config.dbHost, config.dbName,
         config.dbPort),
     session(db)

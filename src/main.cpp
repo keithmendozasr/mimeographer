@@ -19,6 +19,7 @@
 
 #include "PrimaryHandler.h"
 #include "EditHandler.h"
+#include "StaticHandler.h"
 
 using namespace mimeographer;
 using namespace proxygen;
@@ -43,6 +44,7 @@ DEFINE_string(uploadDest, "/tmp", "Folder to save uploaded files to");
 DEFINE_string(hostName, "localhost", "Hostname mimeograph will use");
 DEFINE_string(sslcert, "", "SSL Certificate");
 DEFINE_string(sslkey, "", "SSL Private key");
+DEFINE_string(staticBase, "/tmp", "Location of static files");
 
 namespace mimeographer 
 {
@@ -73,6 +75,12 @@ public:
         {
             LOG(INFO) << "Processing edit";
             ptr = new EditHandler(config);
+        }
+        else if(message->getPath().substr(0, 7) == "/static" ||
+            message->getPath() == "/favicon.ico")
+        {
+            LOG(INFO) << "Processing static file";
+            ptr = new StaticHandler(config);
         }
         else
         {
@@ -110,7 +118,7 @@ int main(int argc, char* argv[])
 
     Config config(
         FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName, FLAGS_dbPort,
-        FLAGS_uploadDest, FLAGS_hostName
+        FLAGS_uploadDest, FLAGS_hostName, FLAGS_staticBase
     );
 
     HTTPServerOptions options;
