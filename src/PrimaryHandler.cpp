@@ -112,7 +112,7 @@ void PrimaryHandler::processRequest()
     }
     else
     {
-        LOG(INFO) << path << "not handled";
+        LOG(INFO) << path << " not handled";
         throw HandlerError(404, "File not found");
     }
 }
