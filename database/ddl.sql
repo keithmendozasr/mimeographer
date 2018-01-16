@@ -22,12 +22,13 @@ CREATE TABLE IF NOT EXISTS extra_user_permissions (
 
 CREATE TABLE IF NOT EXISTS article (
     articleid SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(256) NOT NULL,
     content TEXT NOT NULL,
     userid INT NOT NULL REFERENCES users(userid)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    publishdate TIMESTAMP DEFAULT NULL,
-    savedate TIMESTAMP NOT NULL DEFAULT NOW()
+    publishdate TIMESTAMP DEFAULT NOW(),
+    savedate TIMESTAMP NOT NULL DEFAULT NOW(),
+    summary VARCHAR(256) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS comments (

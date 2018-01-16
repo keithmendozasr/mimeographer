@@ -115,7 +115,7 @@ DBConn::DBConn(const string &username, const string &password,
 DBConn::headline DBConn::getHeadlines() const
 {
     const static string query =
-        "SELECT articleid,title,substr(content,0,255) as leadline"
+        "SELECT articleid, title, preview"
         " FROM article WHERE publishdate <= NOW()"
         " ORDER BY publishdate";
     auto dbResult = execQuery(query);
@@ -138,19 +138,19 @@ DBConn::headline DBConn::getHeadlines() const
         VLOG(2) << "Title: " << title;
 
         len = PQgetlength(dbResult.get(), i, 2);
-        VLOG(2) << "leadline length at row " << i << ": " << len;
-        string leadline = string(PQgetvalue(dbResult.get(), i, 2), len);
-        VLOG(2) << "leadline: " << leadline;
+        VLOG(2) << "Preview length at row " << i << ": " << len;
+        string preview = string(PQgetvalue(dbResult.get(), i, 2), len);
+        VLOG(2) << "Preview: " << preview;
 
-        retVal.push_back(make_tuple(id, title, leadline));
+        retVal.push_back(make_tuple(id, title, preview));
     }
 
     return move(retVal);
 }
 
-DBConn::article DBConn::getArticle(const string &id) const
+string DBConn::getArticle(const string &id) const
 {
-    const static string query = "SELECT title,content FROM article "
+    const static string query = "SELECT content FROM article "
         "WHERE articleid=$1";
     auto dbResult = execQuery(query, array<const char *,1>({ id.c_str() }));
 
@@ -158,15 +158,11 @@ DBConn::article DBConn::getArticle(const string &id) const
     if(PQntuples(dbResult.get()) != 1)
         throw range_error("Unexpected number of articles returned from DB");
    
-    auto len = PQgetlength(dbResult.get(), 0,0);
-    VLOG(3) << "Title length: " << len;
-    auto title = string(PQgetvalue(dbResult.get(), 0,0), len);
-
-    len = PQgetlength(dbResult.get(),0,1);
+    auto len = PQgetlength(dbResult.get(),0,0);
     VLOG(3) << "Content length: " << len;
-    auto content = string(PQgetvalue(dbResult.get(), 0,1), len);
+    auto content = string(PQgetvalue(dbResult.get(), 0,0), len);
 
-    return move(make_tuple(title, content));
+    return move(content);
 }
 
 DBConn::UserRecord DBConn::getUserInfo(const std::string &email)
@@ -302,14 +298,16 @@ boost::optional<const string> DBConn::getCSRFKey(const int &userId, const string
     return move(string(PQgetvalue(dbRslt.get(), 0, 0), len));
 }
 
-const int DBConn::saveArticle(const int &userId, const string &title, const string &markdown)
+const int DBConn::saveArticle(const int &userId, const string &title,
+    const string &preview, const string &markdown)
 {
-    const string query = "INSERT INTO article(userid, title, content, publishdate) "
-        "VALUES($1, $2, $3, NOW()) RETURNING articleid";
+    const string query = "INSERT INTO article(userid, title, preview, content) "
+        "VALUES($1, $2, $3, $4) RETURNING articleid";
     auto dbRslt = execQuery(query,
-        array<const char *, 3>({
+        array<const char *, 4>({
             to_string(userId).c_str(),
             title.c_str(),
+            preview.c_str(),
             markdown.c_str()
         })
     );
@@ -324,14 +322,15 @@ const int DBConn::saveArticle(const int &userId, const string &title, const stri
 }
 
 void DBConn::updateArticle(const int &userId, const string &title,
-    const string &markdown, const string &articleId)
+    const string &preview, const string &markdown, const string &articleId)
 {
     const string query = "UPDATE article SET userid = $1, title = $2, "
-        "content = $3, savedate = NOW() WHERE articleid = $4";
+        "preview = $3, content = $4, savedate = NOW() WHERE articleid = $5";
     execQuery(query,
-        array<const char *, 4>({
+        array<const char *, 5>({
             to_string(userId).c_str(),
             title.c_str(),
+            preview.c_str(),
             markdown.c_str(),
             articleId.c_str()
         })

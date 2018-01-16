@@ -47,10 +47,10 @@ TEST_F(DBConnTest, constructor)
 TEST_F(DBConnTest, getHeadlines)
 {
     static const string leadline = 
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla auctor "
-        "neque eget lobortis mollis. Morbi tempus eu felis eu auctor. Vestibulu"
-        "m ante ipsum primis in faucibus orci luctus et ultrices posuere cubili"
-        "a Curae; Cras tristique tincidunt arcu, eget";
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi interdu"
+        "m enim ex, eget hendrerit neque fringilla at. Aenean dapibus leo et li"
+        "gula sodales tincidunt. Nam sit amet mi vulputate, suscipit mi laoreet"
+        ", tincidunt tortor. Pellentesque euismod amet.";
 
     DBConn::headline testData;
     ASSERT_NO_THROW({ testData = testConn.getHeadlines(); });
@@ -68,7 +68,8 @@ TEST_F(DBConnTest, getHeadlines)
 
 TEST_F(DBConnTest, getArticle)
 {
-    static const string content = "Lorem ipsum dolor sit amet, consectetur adipi"
+    static const string content =
+        "# Test 1\nLorem ipsum dolor sit amet, consectetur adipi"
         "scing elit. Nulla auctor neque eget lobortis mollis. Morbi tempus eu fe"
         "lis eu auctor. Vestibulum ante ipsum primis in faucibus orci luctus et "
         "ultrices posuere cubilia Curae; Cras tristique tincidunt arcu, eget dic"
@@ -84,12 +85,11 @@ TEST_F(DBConnTest, getArticle)
         "tique dolor, quis pulvinar orci libero ut nisl. In hac habitasse platea"
         " dictumst. Nullam tempus vestibulum nisi eget cras amet.";
 
-    DBConn::article testData;
-    ASSERT_NO_THROW({ testData = testConn.getArticle("1"); });
-    ASSERT_STREQ(get<0>(testData).c_str(), "Test 1");
-
-    auto testContent = get<1>(testData);
-    ASSERT_EQ(testContent, content);
+    string testData;
+    ASSERT_NO_THROW({
+        auto testData = testConn.getArticle("1");
+        ASSERT_EQ(testData, content);
+    });
 }
 
 TEST_F(DBConnTest, getUserInfo)

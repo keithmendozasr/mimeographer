@@ -23,6 +23,7 @@
 #include "EditHandler.h"
 #include "HandlerError.h"
 #include "HandlerRedirect.h"
+#include "SummaryBuilder.h"
 
 using namespace std;
 using namespace proxygen;
@@ -105,37 +106,32 @@ void EditHandler::buildMainPage()
 
 void EditHandler::buildEditor(const std::string &articleId)
 {   
-    string title;
     string body;
     if(articleId != "")
     {
         VLOG(1) << "Retrieve article from database";
-        auto article = db.getArticle(articleId);
-        title = get<0>(article);
-        body = get<1>(article);
+        body = db.getArticle(articleId);
     }
 
     VLOG(1) << "Render editor";
-    string page = "<h1>New Article</h1>"
+    string page =
         "<form method=\"post\" action=\"/edit/savearticle\" enctype=\"multipart/form-data\">\n"
             "<input type=\"hidden\" name=\"csrf\" value=\"" + session.genCSRFKey() + "\">\n";
 
     if(articleId != "")
     {
         VLOG(1) << "Add articleid input field";
+        page = "<h1>Update article</h1>" + page;
         page +=
             "<input type=\"hidden\" name=\"articleid\" value=\"" + articleId + "\">\n";
     }
     else
-        VLOG(1) << "Not putting articleid inptu field";
+    {
+        page = "<h1>New Article</h1>" + page;
+        VLOG(1) << "Not putting articleid input field";
+    }
 
     page +=
-            "<div class=\"form-group\">\n"
-                "<label for=\"title\">Title</label>\n"
-                "<input type=\"text\" name=\"title\"  id=\"title\" "
-                    "class=\"form-control\" maxlength=\"255\" required placeholder=\"Title\" "
-                    "value=\"" + title + "\" />\n"
-            "</div>\n"
             "<div class=\"form-group\">\n"
                 "<label for=\"content\">Content</label>\n"
                 "<textarea name=\"content\" class=\"form-control\"  rows=\"20\" "
@@ -160,7 +156,7 @@ void EditHandler::processSaveArticle()
         throw HandlerError(405, "Method not allowed");
     }
 
-    string articleId, title, content;
+    string articleId, content;
     auto param = getPostParam("csrf");
     if(!param || param->type != PostParamType::VALUE ||
         !session.verifyCSRFKey(param->value))
@@ -170,15 +166,6 @@ void EditHandler::processSaveArticle()
     }
     VLOG(1) << "CSRF key validated";
 
-
-    param = getPostParam("title");
-    if(!param || param->type != PostParamType::VALUE)
-    {   
-        LOG(WARNING) << "\"title\" POST param missing or incorrect type";
-        throw HandlerError(400, "Bad Request");
-    }
-    VLOG(1) << "Title present";
-    title = param->value;
 
     param = getPostParam("content");
     if(!param || param->type != PostParamType::VALUE)
@@ -209,10 +196,20 @@ void EditHandler::processSaveArticle()
     else
         VLOG(2) << "articleid POST param not provided";
 
+    SummaryBuilder builder;
+    builder.build(content);
+
+    string title = builder.getTitle();
+    string preview = builder.getPreview();
+
+    VLOG(3) << "Article title: " << title;
+    VLOG(3) << "Article preview: " << preview;
+
     if(articleId == "")
     {
         VLOG(1) << "Save new article to database";
-        auto tmp = db.saveArticle(*(session.getUserId()), title, content);
+        auto tmp = db.saveArticle(*(session.getUserId()), title, preview,
+            content);
         if(tmp)
             prependResponse(string("<p>New article ID: ") + to_string(tmp)
                 + "</p>");
@@ -220,7 +217,8 @@ void EditHandler::processSaveArticle()
     else
     {
         VLOG(1) << "Save article " << articleId << " updates";
-        db.updateArticle(*(session.getUserId()), title, content, articleId);
+        db.updateArticle(*(session.getUserId()), title, preview, content,
+            articleId);
         prependResponse(string("<p>Article updated</p>"));
     }
 }

@@ -77,8 +77,7 @@ void PrimaryHandler::buildArticlePage()
         try
         {
             auto article = db.getArticle(id.str());
-            prependResponse(string("<h1>") + get<0>(article) + "</h1>");
-            auto tmp = get<1>(article);
+            auto tmp = article;
             auto body = cmark_markdown_to_html(tmp.c_str(), tmp.size(), CMARK_OPT_DEFAULT);
             prependResponse(string(body));
             free(body);

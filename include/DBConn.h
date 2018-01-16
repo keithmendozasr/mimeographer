@@ -136,8 +136,7 @@ public:
     ////
     /// Return article specified by id
     ////
-    typedef std::tuple<std::string, std::string> article;
-    article getArticle(const std::string &id) const;
+    std::string getArticle(const std::string &id) const;
 
     ////
     /// Retrieve the user info stored from database, if found
@@ -191,20 +190,23 @@ public:
     /// Save an article
     /// \param userid Author's ID
     /// \param title Article title
+    /// \param preview Article preview
     /// \param markdown Article markdown
     ////
     const int saveArticle(const int &userId, const std::string &title,
-        const std::string &markdown);
+        const std::string &preview, const std::string &markdown);
 
     ////
     /// Update an article
     /// \param userid Author's ID
     /// \param title Article title
+    /// \param preview Articl preview
     /// \param markdown Article markdown
     /// \param articleId Aricle Id to update
     ////
     void updateArticle(const int &userId, const std::string &title,
-        const std::string &markdown, const std::string &articleId);
+        const std::string &preview, const std::string &markdown,
+        const std::string &articleId);
 };
 
 }
