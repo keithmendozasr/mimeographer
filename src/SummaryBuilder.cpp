@@ -20,6 +20,7 @@
 #include "glog/logging.h"
 
 #include "SummaryBuilder.h"
+#include "HandlerError.h"
 
 using namespace std;
 
@@ -117,28 +118,31 @@ void SummaryBuilder::build(const std::string &markdown)
             }
     ));
 
-    enum BuildState { START, TITLE, PREVIEW };
-    BuildState state = START;
+    // Skip the DOCUMENT entry node
+    cmark_iter_next(iterator.get());
+    cmark_event_type evType = cmark_iter_next(iterator.get());
+    if(evType == CMARK_EVENT_ENTER)
+    {
+        auto node = cmark_iter_get_node(iterator.get());
+        auto nodeType = cmark_node_get_type(node);
+        if(nodeType != CMARK_NODE_HEADING)
+        {
+            LOG(INFO) << "Submitted article doesn't start with heading";
+            throw HandlerError(400, "Heading missing from posted article");
+        }
 
-    cmark_event_type evType;
+        buildTitle();
+    }
+
+    VLOG(1) << "Article title extracted";
+
     while((evType = cmark_iter_next(iterator.get())) != CMARK_EVENT_DONE)
     {
         auto node = cmark_iter_get_node(iterator.get());
         auto nodeType = cmark_node_get_type(node);
         if(evType == CMARK_EVENT_ENTER)
         {
-            if(state == START && nodeType == CMARK_NODE_DOCUMENT)
-            {
-                VLOG(1) << "Start of document";
-                state = TITLE;
-            }
-            else if(state == TITLE && nodeType == CMARK_NODE_HEADING)
-            {
-                VLOG(1) << "Get article title";
-                state = PREVIEW;
-                buildTitle();
-            }
-            else if(state == PREVIEW && nodeType == CMARK_NODE_PARAGRAPH)
+            if(nodeType == CMARK_NODE_PARAGRAPH)
             {
                 VLOG(1) << "Get article preview";
                 buildPreview();
@@ -146,6 +150,8 @@ void SummaryBuilder::build(const std::string &markdown)
             }
         }
     }
+
+    VLOG(1) << "Preview extracted";
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
