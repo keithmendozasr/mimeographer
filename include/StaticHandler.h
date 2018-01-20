@@ -20,7 +20,8 @@
 
 #include "HandlerBase.h"
 
-namespace mimeographer {
+namespace mimeographer 
+{
 
 class StaticHandler : public HandlerBase {
 private:

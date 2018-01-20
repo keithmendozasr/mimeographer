@@ -29,6 +29,8 @@ namespace mimeographer
 
 const string DBConn::urlEncode(const string &str) const
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     ostringstream buf;
     buf.fill('0');
     buf << hex;
@@ -41,8 +43,10 @@ const string DBConn::urlEncode(const string &str) const
             buf << '%' << uppercase << setw(2) << int(ch) << nouppercase;
     }
 
-    VLOG(2) << "URL-encoded string to return: "
+    VLOG(3) << "URL-encoded string to return: "
         << buf.str();
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 
     return move(buf.str());
 }
@@ -50,18 +54,28 @@ const string DBConn::urlEncode(const string &str) const
 unique_ptr<PGresult, DBConn::PGresultCleaner>
     DBConn::execQuery(const std::string &query) const
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     auto tmp = PQexec(conn.get(), query.c_str());
     // Something went wrong that prevented PQexec from returning anything;
     // the connection may know why.
     if(!tmp)
-        throw DBError(PQerrorMessage(conn.get()));
+    {
+        const string errMsg = PQerrorMessage(conn.get());
+        LOG(ERROR) << "PQexec encountered an error: " << errMsg;
+        throw DBError(errMsg);
+    }
 
     auto status = PQresultStatus(tmp);
     if(status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK)
-        throw DBError(PQresultErrorMessage(tmp));
+    {
+        const string errMsg = PQresultErrorMessage(tmp);
+        LOG(ERROR) << "Error executing query: " << errMsg;
+        throw DBError(errMsg);
+    }
 
-    // Past this we pass back the managed pointer
-    VLOG(1) << "Returning result pointer";
+    VLOG(1) << "Query executed, return results pointer";
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(unique_ptr<PGresult, PGresultCleaner>(tmp));
 }
 
@@ -69,24 +83,35 @@ template<std::size_t S>
 unique_ptr<PGresult, DBConn::PGresultCleaner> DBConn::execQuery(
     const string &query, array<const char *, S> params) const
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     auto tmp = PQexecParams(conn.get(), query.c_str(),
         params.size(), nullptr, params.data(), nullptr, nullptr,0);
     if(!tmp)
+    {
+        const string errMsg = PQerrorMessage(conn.get());
+        LOG(ERROR) << "PQexec encountered an error: " << errMsg;
         throw DBError(PQerrorMessage(conn.get()));
+    }
 
     auto status = PQresultStatus(tmp);
     if(status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK)
+    {
+        const string errMsg = PQresultErrorMessage(tmp);
+        LOG(ERROR) << "Error executing query: " << errMsg;
         throw (DBError(PQresultErrorMessage(tmp)));
+    }
 
     VLOG(1) << "Returning result pointer";
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(unique_ptr<PGresult, PGresultCleaner>(tmp));
 }
 
 DBConn::DBConn(const string &username, const string &password,
     const string &dbHost, const string &dbName, const unsigned short port)
 {
-    VLOG(2) << __PRETTY_FUNCTION__ << " called\n"
-        << "Username: " << username
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    VLOG(3) << "Username: " << username
         << "\nPassword: NOT PRINTED ON PURPOSE"
         << "\ndbName: " << dbName
         << "\nPort: " << port;
@@ -107,13 +132,20 @@ DBConn::DBConn(const string &username, const string &password,
     conn = unique_ptr<PGconn, PGconnCleaner>(tmp);
 
     if(PQstatus(conn.get()) != CONNECTION_OK)
-        throw DBError(PQerrorMessage(conn.get()));
+    {
+        const string errMsg = PQerrorMessage(conn.get());
+        LOG(ERROR) << "Failed to connect to database: " << errMsg;
+        throw DBError(errMsg);
+    }
 
     VLOG(1) << "DB connection established";
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 DBConn::headline DBConn::getHeadlines() const
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const static string query =
         "SELECT articleid, title, preview"
         " FROM article WHERE publishdate <= NOW()"
@@ -128,33 +160,36 @@ DBConn::headline DBConn::getHeadlines() const
     for(auto i=0; i<rows; i++)
     {
         auto len = PQgetlength(dbResult.get(), i, 0);
-        VLOG(2) << "ID length at row " << i << ": " << len;
+        VLOG(3) << "ID length at row " << i << ": " << len;
         int id = stoi(string(PQgetvalue(dbResult.get(), i, 0), len));
-        VLOG(2) << "ID: " << id;
+        VLOG(3) << "ID: " << id;
 
         len = PQgetlength(dbResult.get(), i, 1);
-        VLOG(2) << "Title length at row " << i << ": " << len;
+        VLOG(3) << "Title length at row " << i << ": " << len;
         string title = string(PQgetvalue(dbResult.get(), i, 1), len);
-        VLOG(2) << "Title: " << title;
+        VLOG(3) << "Title: " << title;
 
         len = PQgetlength(dbResult.get(), i, 2);
-        VLOG(2) << "Preview length at row " << i << ": " << len;
+        VLOG(3) << "Preview length at row " << i << ": " << len;
         string preview = string(PQgetvalue(dbResult.get(), i, 2), len);
-        VLOG(2) << "Preview: " << preview;
+        VLOG(3) << "Preview: " << preview;
 
         retVal.push_back(make_tuple(id, title, preview));
     }
 
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(retVal);
 }
 
 string DBConn::getArticle(const string &id) const
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const static string query = "SELECT content FROM article "
         "WHERE articleid=$1";
     auto dbResult = execQuery(query, array<const char *,1>({ id.c_str() }));
 
-    VLOG(3) << "Number of articles: " << PQntuples(dbResult.get());
+    VLOG(1) << "Number of articles: " << PQntuples(dbResult.get());
     if(PQntuples(dbResult.get()) != 1)
         throw range_error("Unexpected number of articles returned from DB");
    
@@ -162,11 +197,14 @@ string DBConn::getArticle(const string &id) const
     VLOG(3) << "Content length: " << len;
     auto content = string(PQgetvalue(dbResult.get(), 0,0), len);
 
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(content);
 }
 
 DBConn::UserRecord DBConn::getUserInfo(const std::string &email)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const static string query =
         "SELECT userid, fullname, salt, password "
         "FROM users WHERE email=$1 AND isactive";
@@ -209,29 +247,38 @@ DBConn::UserRecord DBConn::getUserInfo(const std::string &email)
         << "\"\nsalt: \"" << salt
         << "\"\npassword: \"" << password << "\"";
 
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return make_tuple(userid, fullname, email, salt, password);
 }
 
 void DBConn::saveSession(const string &uuid)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const static string query = "INSERT INTO session (sessionid) VALUES($1) "
         "ON CONFLICT (sessionid) DO UPDATE SET last_seen = DEFAULT";
 
     execQuery(query, array<const char *, 1>({ uuid.c_str() }));
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void DBConn::mapUuidToUser(const string &uuid, const int &userId)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const static string query = "INSERT INTO user_session(sessionid, userid) "
         "VALUES ($1, $2) ON CONFLICT ON CONSTRAINT user_session_pkey DO NOTHING";
 
     execQuery(query, array<const char *,2>({
         uuid.c_str(), to_string(userId).c_str()
     }));
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 DBConn::SessionInfo DBConn::getSessionInfo(const string &uuid)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const static string query = "SELECT sessionid, userid "
         "FROM session LEFT JOIN user_session USING (sessionid) "
         "WHERE session.sessionid = $1 AND "
@@ -260,11 +307,14 @@ DBConn::SessionInfo DBConn::getSessionInfo(const string &uuid)
         userid = stoi(string(PQgetvalue(dbRslt.get(), 0, 1), len));
     }
 
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return make_tuple(sessionid, userid);
 }
 
 void DBConn::saveCSRFKey(const string &key, const int &userId, const string &sessionid)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const string query = "UPDATE user_session SET csrfkey = $1 "
         "WHERE userid = $2 AND sessionid = $3";
     execQuery(query,
@@ -274,10 +324,14 @@ void DBConn::saveCSRFKey(const string &key, const int &userId, const string &ses
             sessionid.c_str()
         })
     );
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 boost::optional<const string> DBConn::getCSRFKey(const int &userId, const string &sessionid)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const string query = "SELECT csrfkey FROM user_session "
         "WHERE userid = $1 AND sessionid = $2";
     auto dbRslt = execQuery(query,
@@ -289,18 +343,21 @@ boost::optional<const string> DBConn::getCSRFKey(const int &userId, const string
 
     if(PQntuples(dbRslt.get()) == 0)
     {
-        LOG(WARNING) << "No CSRF found in database for user " << userId
+        VLOG(1) << "No CSRF found in database for user " << userId
             << " session " << sessionid;
         return boost::none;
     }
 
     size_t len = PQgetlength(dbRslt.get(), 0, 0);
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(string(PQgetvalue(dbRslt.get(), 0, 0), len));
 }
 
 const int DBConn::saveArticle(const int &userId, const string &title,
     const string &preview, const string &markdown)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const string query = "INSERT INTO article(userid, title, preview, content) "
         "VALUES($1, $2, $3, $4) RETURNING articleid";
     auto dbRslt = execQuery(query,
@@ -318,12 +375,16 @@ const int DBConn::saveArticle(const int &userId, const string &title,
     size_t len = PQgetlength(dbRslt.get(), 0, 0);
     int rslt = stoi(string(PQgetvalue(dbRslt.get(), 0, 0), len));
     VLOG(3) << "New article's ID: " << rslt;
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(rslt);
 }
 
 void DBConn::updateArticle(const int &userId, const string &title,
     const string &preview, const string &markdown, const string &articleId)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const string query = "UPDATE article SET userid = $1, title = $2, "
         "preview = $3, content = $4, savedate = NOW() WHERE articleid = $5";
     execQuery(query,
@@ -337,6 +398,7 @@ void DBConn::updateArticle(const int &userId, const string &title,
     );
 
     VLOG(1) << "Article " << articleId << " updated";
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 } // namespace

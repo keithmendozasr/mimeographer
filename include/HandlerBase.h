@@ -107,6 +107,8 @@ protected:
 
     inline void prependResponse(const std::string &data)
     {
+        VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
         if(handlerResponse)
         {
             VLOG(3) << "Prepending to existing handlerResponse";
@@ -117,6 +119,8 @@ protected:
             VLOG(3) << "Creating new handlerResponse";
             handlerResponse = std::move(folly::IOBuf::copyBuffer(data));
         }
+
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
     }
 
     inline const std::string & getPath() const
@@ -136,18 +140,24 @@ protected:
 
     inline boost::optional<std::string> getCookie(const std::string &name)
     {
+        VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+        boost::optional<std::string> retVal = boost::none;
         try
         {
             auto r = cookieJar.at(name);
             VLOG(1) << "Cookie with name " << name << " found";
-            return move(r);
+
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
+            retVal = r;
         }
         catch(std::out_of_range &e)
         {
             VLOG(1) << "No cookie with name " << name;
         }
 
-        return boost::none;
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        return retVal;
     }
 
     ////

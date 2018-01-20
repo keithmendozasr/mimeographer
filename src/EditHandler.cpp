@@ -34,6 +34,8 @@ namespace mimeographer
 
 void EditHandler::buildLoginPage(const bool &showMismatch)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
 	const static string html = 
         "<form method=\"post\" action=\"/edit/login\" enctype=\"multipart/form-data\" class=\"form-signin\" style=\"max-width:330px; margin:0 auto\">"
         "<h2 class=\"form-signin-heading\">Please sign in</h2>"
@@ -57,10 +59,14 @@ void EditHandler::buildLoginPage(const bool &showMismatch)
         VLOG(1) << "Not showing mismatch banner";
 
     prependResponse(html);
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void EditHandler::processLogin()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     const static string cookieName = "session";
 
     auto login = getPostParam("login");
@@ -72,8 +78,8 @@ void EditHandler::processLogin()
         if(!uuid)
             uuid = "";
 
-        VLOG(1) << "Login credentials supplied";
-        VLOG(3) << "Login: " << login->value
+        VLOG(3) << "Login credentials supplied"
+            << "\n\tLogin: " << login->value
             << "\n\tPassword: NOT PRINTED"
             << "\n\tUUID from cookie: " << *uuid;
 
@@ -92,20 +98,28 @@ void EditHandler::processLogin()
 
     // If code gets here; let user retry
     buildLoginPage(true);
+
+    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
 void EditHandler::buildMainPage()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     VLOG(1) << "Render main page";
     prependResponse(
         "<h1>Choose an action</h1>\n" + makeMenuButtons({
         { "/edit/new", "New Article" },
         { "/edit/article", "Edit An Article" }
     }));
+
+    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
 void EditHandler::buildEditor(const std::string &articleId)
 {   
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     string body;
     if(articleId != "")
     {
@@ -145,10 +159,14 @@ void EditHandler::buildEditor(const std::string &articleId)
             "<button type=\"submit\" class=\"btn btn-primary\">Save</button>\n"
         "</form>\n";
     prependResponse(page);
+
+    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
 void EditHandler::processSaveArticle()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     if(getMethod() != "POST")
     {
         LOG(WARNING) << "Unexpecte method \"" << getMethod()
@@ -191,10 +209,10 @@ void EditHandler::processSaveArticle()
                 throw HandlerError(400, "Bad Request");
             }
         }
-        VLOG(2) << "articleid passed validation";
+        VLOG(3) << "articleid passed validation";
     }
     else
-        VLOG(2) << "articleid POST param not provided";
+        VLOG(3) << "articleid POST param not provided";
 
     SummaryBuilder builder;
     builder.build(content);
@@ -207,7 +225,7 @@ void EditHandler::processSaveArticle()
 
     if(articleId == "")
     {
-        VLOG(1) << "Save new article to database";
+        LOG(INFO) << "Save new article to database";
         auto tmp = db.saveArticle(*(session.getUserId()), title, preview,
             content);
         if(tmp)
@@ -216,15 +234,19 @@ void EditHandler::processSaveArticle()
     }
     else
     {
-        VLOG(1) << "Save article " << articleId << " updates";
+        LOG(INFO) << "Update article " << articleId;
         db.updateArticle(*(session.getUserId()), title, preview, content,
             articleId);
         prependResponse(string("<p>Article updated</p>"));
     }
+
+    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
 void EditHandler::buildEditSelect()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     VLOG(1) << "Build article list";
 
     string data;
@@ -248,16 +270,20 @@ void EditHandler::buildEditSelect()
         }
     }
     prependResponse(data);
+
+    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
 void EditHandler::processEditArticle()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     static regex parser("/edit/article/(\\d+)");
     smatch match;
     if(regex_match(getPath(), match, parser))
     {
         auto id = match[1];
-        VLOG(2) << "Article id: " << id.str();
+        VLOG(3) << "Article id: " << id.str();
         buildEditor(id.str());
     }
     else
@@ -267,13 +293,19 @@ void EditHandler::processEditArticle()
         else
         {
             LOG(WARNING) << "Path didn't parse";
+
+            VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
             throw HandlerError(404, "File not found");
         }
     }
+
+    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
 void EditHandler::processRequest() 
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     auto path = getPath();
     if(path.back() == '/')
         path = path.substr(0,path.size()-1);
@@ -295,6 +327,8 @@ void EditHandler::processRequest()
             else
             {
                 VLOG(1) << "User has active session, proceed to edit home page";
+
+                VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
                 throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/edit");
             }
         }
@@ -309,6 +343,8 @@ void EditHandler::processRequest()
         {
             LOG(INFO) << "Redirect to login page";
             addCookie("session", session.getUUID());
+
+            VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
             throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303,
                 "/edit/login"
             );
@@ -326,9 +362,13 @@ void EditHandler::processRequest()
         else
         {
             LOG(INFO) << path << "not handled";
+
+            VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
             throw HandlerError(404, "File not found");
         }
     }
+
+    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
 }

@@ -45,11 +45,14 @@ private:
 
     inline const std::string genUUID() const
     {
+        VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
         uuid_t nUUID;
         uuid_generate_random(nUUID);
         char cTmp[37];
         uuid_unparse(nUUID, cTmp);
 
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         return std::move(cTmp);
     }
 

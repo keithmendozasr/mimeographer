@@ -40,6 +40,7 @@ UserSession::UserSession(DBConn &db) :
 void UserSession::initSession(const std::string &uuid)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     if(uuid == "")
     {
         VLOG(1) << "Generate new UUID";
@@ -91,6 +92,8 @@ void UserSession::initSession(const std::string &uuid)
 tuple<string,string> UserSession::hashPassword(const string &pass,
     const string &salt)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     string useSalt;
     if(salt == "")
     {
@@ -99,38 +102,47 @@ tuple<string,string> UserSession::hashPassword(const string &pass,
         if(!rndFile)
         {
             auto err = errno;
+
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
             throw runtime_error(
                 string("Failed to open /dev/random. Cause: ") + strerror(err)
             );
         }
 
-        VLOG(2) << "/dev/urandom open";
+        VLOG(3) << "/dev/urandom open";
         unsigned char rndBuf[32];
         rndFile.read((char *)rndBuf, 32);
         if(!rndFile)
+        {
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
             throw runtime_error("Failed to read from /dev/urandom");
+        }
 
-        VLOG(2) << "BASE64 encode seed";
+        VLOG(1) << "BASE64 encode seed";
         useSalt = Base64::urlEncode(ByteRange(rndBuf, 32));
     }
     else
     {
-        VLOG(2) << "Use existing salt";
+        VLOG(1) << "Use existing salt";
         useSalt = salt;
     }
 
-    VLOG(2) << "Calculate hash. Salt to use: " << useSalt;
+    VLOG(1) << "Calculate hash.";
+    VLOG(3) << "Salt to use: " << useSalt;
     unsigned char hash[32];
     OpenSSLHash::sha256(MutableByteRange(hash, 32), ByteRange((unsigned char *)useSalt.c_str(), (size_t)useSalt.size()));
     string hashStr = Base64::urlEncode(ByteRange(hash, 32));
     VLOG(2) << "sha256 output: " << hashStr;
     
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(make_tuple(hashStr, useSalt));
 }
 
 const bool UserSession::authenticateLogin(const std::string &email,
     const std::string &password)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     bool rslt = false;
     auto dbRet = db.getUserInfo(email);
     if(!dbRet)
@@ -152,27 +164,38 @@ const bool UserSession::authenticateLogin(const std::string &email,
         }
     }
 
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return rslt;
 }
 
 const std::string UserSession::genCSRFKey()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     if(uuid == "" || !userId)
+    {
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         throw logic_error("UUID or User ID not know at CSRF key generation");
+    }
     
     string csrf = genUUID();
     VLOG(3) << "CSRF generated: " << csrf;
 
     db.saveCSRFKey(csrf, *userId, uuid);
 
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(csrf);
 }
 
 const bool UserSession::verifyCSRFKey(const string &csrfkey)
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     if(!userId)
     {
         LOG(WARNING) << "User ID not set when verifying CSRF";
+
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         return false;
     }
     auto expectedKey = db.getCSRFKey(*userId, uuid);
@@ -180,10 +203,14 @@ const bool UserSession::verifyCSRFKey(const string &csrfkey)
     {
         LOG(WARNING) << "No CSRF key associated to user id " << *userId
             << " session " << uuid;
+
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         return false;
     }
 
     VLOG(3) << "Value of expected key: " << *expectedKey;
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return *expectedKey == csrfkey;
 }
 

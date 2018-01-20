@@ -31,6 +31,8 @@ namespace mimeographer {
 
 void StaticHandler::readFile(folly::EventBase* evb) 
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     folly::IOBufQueue buf;
     while (file_ && !paused_)
     {
@@ -54,7 +56,7 @@ void StaticHandler::readFile(folly::EventBase* evb)
         {
             // done
             file_.reset();
-            VLOG(4) << "Read EOF";
+            VLOG(1) << "Read EOF";
             evb->runInEventBaseThread(
                 [this] {
                     ResponseBuilder(downstream_)
@@ -82,27 +84,36 @@ void StaticHandler::readFile(folly::EventBase* evb)
             readFileScheduled_ = false;
             if (!checkForCompletion() && !paused_) 
             {
-                VLOG(4) << "Resuming deferred readFile";
+                VLOG(1) << "Resuming deferred readFile";
                 onEgressResumed();
             }
         }
     );
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 bool StaticHandler::checkForCompletion()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     if (finished_ && !readFileScheduled_)
     {
-        VLOG(4) << "deleting StaticHandler";
+        VLOG(1) << "deleting StaticHandler";
         delete this;
+
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         return true;
     }
 
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return false;
 }
 
 void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept 
 {   
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     LOG(INFO) << "Handling request from " 
         << headers->getClientIP() << ":"
         << headers->getClientPort()
@@ -186,6 +197,8 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
             .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
             .body(move(response))
             .sendWithEOM();
+
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         return;
     }
 
@@ -199,17 +212,25 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         std::bind(&StaticHandler::readFile, this,
         folly::EventBaseManager::get()->getEventBase())
     );
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void StaticHandler::onEgressPaused() noexcept 
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     // This will terminate readFile soon
     VLOG(4) << "StaticHandler paused";
     paused_ = true;
+    
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void StaticHandler::onEgressResumed() noexcept 
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     VLOG(4) << "StaticHandler resumed";
     paused_ = false;
     // If readFileScheduled_, it will reschedule itself
@@ -224,21 +245,30 @@ void StaticHandler::onEgressResumed() noexcept
     {
         VLOG(4) << "Deferred scheduling readFile";
     }
+    
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void StaticHandler::requestComplete() noexcept 
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     finished_ = true;
     paused_ = true;
     checkForCompletion();
+    
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void StaticHandler::onError(ProxygenError /*err*/) noexcept
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     finished_ = true;
     paused_ = true;
     checkForCompletion();
+    
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
-
 
 }

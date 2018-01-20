@@ -69,6 +69,8 @@ public:
 
     RequestHandler* onRequest(RequestHandler* handler, HTTPMessage* message) noexcept override
     {
+        VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
         auto path = message->getPath();
         RequestHandler *ptr;
         if(message->getPath().substr(0, 5) == "/edit")
@@ -88,6 +90,7 @@ public:
             ptr = new PrimaryHandler(config);
         }
 
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         return ptr;
     }
 };
@@ -96,6 +99,8 @@ public:
 
 int main(int argc, char* argv[]) 
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     folly::init(&argc, &argv, true);
 
     wangle::SSLContextConfig sslConfig;
@@ -138,5 +143,7 @@ int main(int argc, char* argv[])
     std::thread t([&] () { server.start(); });
 
     t.join();
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return 0;
 }

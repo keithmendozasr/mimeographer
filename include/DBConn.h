@@ -51,7 +51,7 @@ private:
         {
             if(conn)
             {
-                VLOG(2) << "Clean PGconn instance";
+                VLOG(1) << "Clean PGconn instance";
                 PQfinish(conn);
             }
         }
@@ -77,7 +77,7 @@ private:
         {
             if(ptr)
             {
-                VLOG(2) << "Clean PGresult";
+                VLOG(1) << "Clean PGresult";
                 PQclear(ptr);
             }
         }

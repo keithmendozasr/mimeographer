@@ -30,6 +30,7 @@ namespace mimeographer
 void SummaryBuilder::buildTitle()
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     cmark_event_type evType;
     while((evType = cmark_iter_next(iterator.get())) != CMARK_EVENT_DONE)
     {
@@ -37,32 +38,37 @@ void SummaryBuilder::buildTitle()
         auto nodeType = cmark_node_get_type(node);
         if(evType == CMARK_EVENT_ENTER)
         {
-            VLOG(2) << "Entering node " << cmark_node_get_type_string(node);
+            VLOG(3) << "Entering node " << cmark_node_get_type_string(node);
             if(nodeType == CMARK_NODE_TEXT)
             {
                 auto text = cmark_node_get_literal(node);
-                VLOG(2) << "Append text to title \"" << text << "\"";
+                VLOG(3) << "Append text to title \"" << text << "\"";
                 title += text;
             }
             else
-                VLOG(2) << "Skipping node";
+                VLOG(3) << "Skipping node";
         }
         else if(evType == CMARK_EVENT_EXIT && nodeType == CMARK_NODE_HEADING)
         {
-            VLOG(2) << "Done collecting title";
+            VLOG(1) << "Done collecting title";
             break;
         }
     }
 
     VLOG(3) << "New value of title: " << title;
     if(title == "")
+    {
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         throw invalid_argument("Header missing from provided markdown");
+    }
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void SummaryBuilder::buildPreview()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     cmark_event_type evType;
     while((evType = cmark_iter_next(iterator.get())) != CMARK_EVENT_DONE &&
         preview.size() < 256)
@@ -71,15 +77,16 @@ void SummaryBuilder::buildPreview()
         auto nodeType = cmark_node_get_type(node);
         if(evType == CMARK_EVENT_ENTER)
         {
-            VLOG(2) << "Entering node " << cmark_node_get_type_string(node);
+            VLOG(1) << "Entering node " << cmark_node_get_type_string(node);
             if(nodeType == CMARK_NODE_TEXT)
             {
                 auto text = cmark_node_get_literal(node);
-                VLOG(2) << "Append text to title \"" << text << "\"";
+                VLOG(1) << "Append text to title";
+                VLOG(3) << "Value to append: \"" << text << "\"";
                 preview += text;
             }
             else
-                VLOG(2) << "Skipping node";
+                VLOG(1) << "Skipping node";
         }
         else if(evType == CMARK_EVENT_EXIT && nodeType == CMARK_NODE_PARAGRAPH)
         {
@@ -91,7 +98,10 @@ void SummaryBuilder::buildPreview()
     preview = preview.substr(0,256);
     VLOG(3) << "New value of preview:\n" << preview;
     if(preview == "")
+    {
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         throw invalid_argument("No paragraphs provided in markdown");
+    }
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
@@ -99,6 +109,7 @@ void SummaryBuilder::buildPreview()
 void SummaryBuilder::build(const std::string &markdown)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     unique_ptr<cmark_node, function<void(cmark_node*)>> rootNode(
         cmark_parse_document(markdown.c_str(), markdown.size(),
             CMARK_OPT_DEFAULT),
@@ -128,6 +139,7 @@ void SummaryBuilder::build(const std::string &markdown)
         if(nodeType != CMARK_NODE_HEADING)
         {
             LOG(INFO) << "Submitted article doesn't start with heading";
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
             throw HandlerError(400, "Heading missing from posted article");
         }
 

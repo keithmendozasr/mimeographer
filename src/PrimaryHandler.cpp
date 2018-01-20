@@ -35,6 +35,8 @@ namespace mimeographer
 
 void PrimaryHandler::buildFrontPage()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     VLOG(1) << "DB connection established";
     string data;
     for(auto article : db.getHeadlines())
@@ -44,6 +46,7 @@ void PrimaryHandler::buildFrontPage()
             << get<1>(article) << "</a></h1>\n<div class=\"col col-12\" >";
 
         {
+            // TODO: Re-evaluate
             auto str = get<2>(article);
             auto tmp = cmark_markdown_to_html(str.c_str(), str.size(), CMARK_OPT_DEFAULT);
             line << tmp << "</div>\n" ;
@@ -64,10 +67,14 @@ void PrimaryHandler::buildFrontPage()
     }
     prependResponse(data);
     VLOG(1) << "Front page data processed";
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void PrimaryHandler::buildArticlePage()
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     static regex parser("/article/(\\d+)");
     smatch match;
     if(regex_match(getPath(), match, parser))
@@ -85,18 +92,26 @@ void PrimaryHandler::buildArticlePage()
         catch(const range_error &)
         {
             LOG(INFO) << "Caught unexpected number of articles";
+
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
             throw HandlerError(404, "Article " + id.str() + " not found");
         }
     }
     else
     {
         LOG(WARNING) << "path didn't parse";
+
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         throw HandlerError(404, "File not found");
     }
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 void PrimaryHandler::processRequest() 
 {
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
     auto path = getPath();
     VLOG(2) << "path.substr(9): " << path.substr(0,9);
     if(path == "/")
@@ -112,8 +127,13 @@ void PrimaryHandler::processRequest()
     else
     {
         LOG(INFO) << path << " not handled";
+
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
         throw HandlerError(404, "File not found");
+
     }
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
 }
