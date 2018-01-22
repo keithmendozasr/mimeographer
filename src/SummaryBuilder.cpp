@@ -16,6 +16,7 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <functional>
 
 #include "glog/logging.h"
 
