@@ -38,6 +38,9 @@ private:
     void processSaveArticle();
     void buildEditSelect();
     void processEditArticle();
+    void buildUploadPage();
+    void processUpload();
+    void processViewUpload();
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}

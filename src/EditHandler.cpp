@@ -15,10 +15,13 @@
  */
 
 #include <string>
+#include <vector>
 
 #include <glog/logging.h>
 
 #include <folly/io/IOBuf.h>
+
+#include <boost/filesystem.hpp>
 
 #include "EditHandler.h"
 #include "HandlerError.h"
@@ -28,6 +31,7 @@
 using namespace std;
 using namespace proxygen;
 using namespace folly;
+using namespace boost::filesystem;
 
 namespace mimeographer 
 {
@@ -110,7 +114,9 @@ void EditHandler::buildMainPage()
     prependResponse(
         "<h1>Choose an action</h1>\n" + makeMenuButtons({
         { "/edit/new", "New Article" },
-        { "/edit/article", "Edit An Article" }
+        { "/edit/article", "Edit An Article" },
+        { "/edit/upload", "Upload image" },
+        { "/edit/viewupload", "View uploads" }
     }));
 
     VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
@@ -302,6 +308,133 @@ void EditHandler::processEditArticle()
     VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
+void EditHandler::buildUploadPage()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    VLOG(1) << "Render upload form";
+    string page = "<h1>Upload image</h1>\n"
+        "<form method=\"post\" action=\"/edit/upload\" enctype=\"multipart/form-data\">\n"
+            "<input type=\"hidden\" name=\"csrf\" value=\"" + session.genCSRFKey() + "\">\n"
+            "<div class=\"form-group\">\n"
+                "<label for=\"fileupload\">File to upload</label>\n"
+                "<input type=\"file\" accept=\"image/*\" name=\"fileupload\" "
+                    "id=\"fileupload\" class=\"form-control\" />\n"
+            "</div>\n"
+            "<button type=\"submit\" class=\"btn btn-primary\">Upload</button>\n"
+        "</form>\n";
+    prependResponse(page);
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
+void EditHandler::processUpload()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    if(getMethod() == "GET")
+    {
+        LOG(INFO) << "Render upload page";
+        buildUploadPage();
+    }
+    else if(getMethod() == "POST")
+    {
+        LOG(INFO) << "Process uploaded file";
+        auto param = getPostParam("csrf");
+        if(!param || param->type != PostParamType::VALUE ||
+            !session.verifyCSRFKey(param->value))
+        {
+            LOG(WARNING) << "CSRF mismatch. CSRF provided: " << param->value;
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
+            throw HandlerError(401, "Unauthorized");
+        }
+        VLOG(1) << "CSRF key validated";
+
+        param = getPostParam("fileupload");
+        if(!param || param->type != PostParamType::FILE_UPLOAD)
+        {
+            LOG(WARNING) << "Upload file parameter not provided";
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
+            throw HandlerError(400, "Bad Request");
+        }
+
+        string::size_type baseLen = config.staticBase.size() -
+            (*(config.staticBase.end()-1) == '/' ? 1 : 0);
+        VLOG(3) << "Value of baseLen: " << baseLen;
+        string displayPath = param->localFilename;
+        displayPath.replace(0, baseLen, "/static");
+        string body = "<p>File uploaded and saved as " + displayPath + "</p>";
+        prependResponse(body);
+    }
+    else
+    {
+        LOG(WARNING) << "Unexpected method " << getMethod();
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        throw HandlerError(405, "Method not allowed");
+    }
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
+void EditHandler::processViewUpload()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    string body = "<h1>Upload files</h1>";
+    prependResponse(body);
+    try
+    {
+        string uploadDir = config.staticBase + '/' + config.uploadDest;
+        path p(uploadDir);
+        if(exists(p))
+        {
+            VLOG(1) << uploadDir << " exists";
+            if(is_directory(p))
+            {
+                VLOG(1) << uploadDir << " is a directory";
+                vector<string> fileList;
+                for(auto && f : directory_iterator(p))
+                {
+                    auto filename = f.path().filename().string();
+                    VLOG(3) << "Add file to vector: " << filename;
+                    fileList.push_back(filename);
+                }
+                sort(fileList.begin(), fileList.end());
+                body = "";
+                for(auto && x : fileList)
+                {
+                    auto displayPath = "/static/" + config.uploadDest
+                        + (*(config.uploadDest.end()-1) != '/' ? "/" : "")
+                        + x;
+                    body += "<div class=\"row mb-3\">\n"
+                        "<div class=\"col-8\">"
+                            "<img class=\"img-fluid\" src=\""
+                                + displayPath + "\" /></div>\n"
+                        "<div class=\"col-4\"><p>" + displayPath + "</p></div>\n"
+                        "</div>\n";
+                }
+                prependResponse(body);
+            }
+            else
+            {
+                LOG(ERROR) << config.uploadDest << " is not a directory";
+                throw HandlerError(500, "Internal error");
+            }
+        }
+        else
+        {
+            LOG(ERROR) << config.uploadDest << " does not exist";
+            throw HandlerError(500, "Internal error");
+        }
+    }
+    catch(const filesystem_error &e)
+    {
+        LOG(ERROR) << "Exception encountered enumerating " << config.uploadDest
+            << ": " << e.what();
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        throw HandlerError(500, "Internal error");
+    }
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
 void EditHandler::processRequest() 
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -359,6 +492,10 @@ void EditHandler::processRequest()
             processSaveArticle();
         else if(path.substr(0, strlen("/edit/article")) == "/edit/article")
             processEditArticle();
+        else if(path == "/edit/upload")
+            processUpload();
+        else if(path == "/edit/viewupload")
+            processViewUpload();
         else
         {
             LOG(INFO) << path << "not handled";

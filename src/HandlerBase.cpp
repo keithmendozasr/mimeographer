@@ -65,9 +65,10 @@ int HandlerBase::PostBodyCallback::onFileStart(const std::string& name,
     uuid_unparse_lower(uuid, fileuuid);
     VLOG(3) << "File UUID: " << fileuuid;
 
-    localFilename = parent.config.uploadDest;
-    localFilename += (*(localFilename.end()-1) != '/' ? "/" : "");
-    localFilename += fileuuid;
+    localFilename = parent.config.staticBase
+        + (*(parent.config.staticBase.end()-1) != '/' ? "/" : "")
+        + parent.config.uploadDest + (*(parent.config.uploadDest.end()-1) != '/' ? "/" : "")
+        + fileuuid + "_" + filename;
     VLOG(3) << "Local filename to use: " << localFilename;
 
     saveFile.open(localFilename, ios_base::out | ios_base::binary);
@@ -332,7 +333,11 @@ void HandlerBase::onEOM() noexcept
             str << "\n\tType: value"
                 << "\n\tValue: \"" << i->second.value << "\"";
             break;
-        // TODO: Handle FILE upload
+        case PostParamType::FILE_UPLOAD:
+            str << "\n\tType: file_upload"
+                << "\n\tUpload filename: \"" << i->second.filename << "\""
+                << "\n\tLocal filename: \"" << i->second.localFilename << "\"";
+            break;
         default:
             str << "\n\tType: Unknown";
         }

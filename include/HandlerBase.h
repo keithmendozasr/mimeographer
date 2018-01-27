@@ -27,7 +27,7 @@
 #include <proxygen/lib/http/experimental/RFC1867.h>
 #include <folly/io/IOBuf.h>
 
-#include "gtest/gtest.h"
+#include "gtest/gtest_prod.h"
 
 #include "Config.h"
 #include "DBConn.h"

@@ -155,17 +155,21 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
     {
         static regex parser("/static/(.+)");
         smatch match;
-
-        if(regex_match(headers->getPath(), match, parser))
+        string path = parsePath(headers->getPath());
+        VLOG(3) << "Static file path: " << path;
+        if(regex_match(path, match, parser))
         {
             fileName = config.staticBase + "/" + match[1].str();
             VLOG(3) << "Local fileName: " << fileName;
             file_ = std::make_unique<folly::File>(fileName.c_str());
         }
-        else if(headers->getPath() == "/favicon.ico")
+        else if(path == "/favicon.ico")
             file_ = std::make_unique<folly::File>(config.staticBase + "/favicon.ico");
         else
+        {
+            LOG(WARNING) << "File path not handled";
             throw HandlerError(404, "File Not Found");
+        }
     }
     catch (const std::system_error& ex) 
     {
@@ -258,6 +262,57 @@ void StaticHandler::requestComplete() noexcept
     checkForCompletion();
     
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
+string StaticHandler::parsePath(const string &path)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    string retVal;
+    for(auto p = path.begin(); p != path.end(); p++)
+    {
+        VLOG(3) << "Value of p: " << *p;
+        if(*p == '+')
+        {
+            VLOG(3) << "Replacing '+' with <space>";
+            retVal += ' ';
+        }
+        else if(*p == '%')
+        {
+            VLOG(3) << "Handle hex-encoded char";
+            p++;
+            string tmp;
+            tmp += *p;
+            p++;
+            tmp += *p;
+            VLOG(3) << "Value of tmp: " << tmp;
+            size_t pos;
+            try
+            {
+                char chr = stoi(tmp, &pos, 16);
+                VLOG(3) << "Value of chr: " << (int)chr;
+                VLOG(3) << "Value of pos: " << pos;
+                if(pos != 2)
+                    throw logic_error("Failed to convert " + tmp);
+                retVal += chr;
+            }
+            catch (const logic_error &e)
+            {
+                LOG(INFO) << "Failed to convert " << tmp << " to integer";
+                VLOG(2) << "End " << __PRETTY_FUNCTION__;
+                throw HandlerError(400, "Bad Request");
+            }
+        }
+        else
+        {
+            VLOG(3) << "Append char";
+            retVal += *p;
+        }
+    }
+
+    VLOG(3) << "Value to return: " << retVal;
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return move(retVal);
 }
 
 void StaticHandler::onError(ProxygenError /*err*/) noexcept

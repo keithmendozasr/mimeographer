@@ -23,7 +23,10 @@
 namespace mimeographer 
 {
 
-class StaticHandler : public HandlerBase {
+class StaticHandler : public HandlerBase 
+{
+    FRIEND_TEST(StaticHandlerTest, parsePath);
+
 private:
     std::unique_ptr<folly::File> file_;
     bool readFileScheduled_{false};
@@ -33,6 +36,7 @@ private:
 
     void readFile(folly::EventBase* evb);
     bool checkForCompletion();
+    std::string parsePath(const std::string &path);
 
 public:
     StaticHandler(const Config &config) : HandlerBase(config) {}
