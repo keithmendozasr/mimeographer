@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iomanip>
+
 #include <folly/init/Init.h>
 #include <proxygen/httpserver/HTTPServer.h>
 #include <proxygen/httpserver/RequestHandlerFactory.h>
 
+#include <cmark.h>
+
 #include "PrimaryHandler.h"
 #include "EditHandler.h"
 #include "StaticHandler.h"
-
 using namespace mimeographer;
 using namespace proxygen;
 
@@ -99,9 +102,14 @@ public:
 
 int main(int argc, char* argv[]) 
 {
+    folly::init(&argc, &argv, true);
+
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
-    folly::init(&argc, &argv, true);
+    VLOG(3) << "Value of cmark_version: " << cmark_version();
+    if(cmark_version() < ((0<<16) | (28 << 8) | 0)) 
+        LOG(WARNING) << "cmark version is " << cmark_version_string()
+            << ". Your milage may vary.";
 
     wangle::SSLContextConfig sslConfig;
     sslConfig.isDefault = true;
