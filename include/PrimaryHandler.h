@@ -22,6 +22,8 @@
 #include <string>
 #include <exception>
 
+#include "gtest/gtest_prod.h"
+
 #include "HandlerBase.h"
 
 namespace mimeographer 
@@ -29,9 +31,9 @@ namespace mimeographer
 
 class PrimaryHandler : public HandlerBase
 {
-
 private:
     void buildFrontPage();
+    void renderArticle(const std::string &data);
     void buildArticlePage();
     void processRequest();
 
