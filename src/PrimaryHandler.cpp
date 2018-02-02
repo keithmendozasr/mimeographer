@@ -43,15 +43,8 @@ void PrimaryHandler::buildFrontPage()
     {
         ostringstream line;
         line << "<h1><a href=\"/article/" << get<0>(article) << + "\">"
-            << get<1>(article) << "</a></h1>\n<div class=\"col col-12\" >";
-
-        {
-            // TODO: Re-evaluate
-            auto str = get<2>(article);
-            auto tmp = cmark_markdown_to_html(str.c_str(), str.size(), CMARK_OPT_DEFAULT);
-            line << tmp << "</div>\n" ;
-            free(tmp);
-        }
+            << get<1>(article) << "</a></h1>\n<div class=\"col col-12\" >"
+            << get<2>(article) << "\n</div>\n";
 
         if((data.capacity() - data.size() - line.str().size()) < 0)
         {
