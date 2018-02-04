@@ -138,7 +138,7 @@ void PrimaryHandler::renderArticle(const string &data)
                 break;
             case CMARK_NODE_BLOCK_QUOTE:
                 VLOG(1) << "Open blockquote tag";
-                chunk << "<blockquote>";
+                chunk << "<blockquote>\n";
                 break;
             case CMARK_NODE_LINK:
                 VLOG(1) << "Open link tag";
@@ -193,6 +193,18 @@ void PrimaryHandler::renderArticle(const string &data)
                 VLOG(1) << "Render br tag";
                 chunk << "<br />\n";
                 break;
+            case CMARK_NODE_SOFTBREAK:
+                VLOG(1) << "Render softbreak as space";
+                chunk << " ";
+                break;
+            case CMARK_NODE_EMPH:
+                VLOG(1) << "Open em tag";
+                chunk << "<em>";
+                break;
+            case CMARK_NODE_STRONG:
+                VLOG(1) << "Open strong tag";
+                chunk << "<strong>";
+                break;
             default:
                 VLOG(1) << "Ignoring node";
                 break;
@@ -208,13 +220,13 @@ void PrimaryHandler::renderArticle(const string &data)
                 break;
             case CMARK_NODE_HEADING:
                 VLOG(1) << "Render header tag";
-                chunk << "</h" << cmark_node_get_heading_level(node) << ">";
+                chunk << "</h" << cmark_node_get_heading_level(node) << ">\n";
                 break;
             case CMARK_NODE_PARAGRAPH:
                 if(!inItem)
                 {
                     VLOG(1) << "Close paragraph tag";
-                    chunk << "</p>";
+                    chunk << "</p>\n";
                 }
                 else
                     VLOG(1) << "Skip adding </p> tag";
@@ -224,11 +236,11 @@ void PrimaryHandler::renderArticle(const string &data)
                 {
                 case CMARK_BULLET_LIST:
                     VLOG(1) << "Close bullet list";
-                    chunk << "</ul>";
+                    chunk << "</ul>\n";
                     break;
                 case CMARK_ORDERED_LIST:
                     VLOG(1) << "Close ordered list";
-                    chunk << "</ol>";
+                    chunk << "</ol>\n";
                     break;
                 default:
                     throw logic_error("List type unknown");
@@ -237,11 +249,11 @@ void PrimaryHandler::renderArticle(const string &data)
             case CMARK_NODE_ITEM:
                 VLOG(1) << "Open item";
                 inItem = false;
-                chunk << "</li>";
+                chunk << "</li>\n";
                 break;
             case CMARK_NODE_BLOCK_QUOTE:
                 VLOG(1) << "Close blockquote tag";
-                chunk << "</blockquote>";
+                chunk << "</blockquote>\n";
                 break;
             case CMARK_NODE_LINK:
                 VLOG(1) << "Close link tag";
@@ -251,12 +263,21 @@ void PrimaryHandler::renderArticle(const string &data)
                 VLOG(1) << "Wrap up image tag";
                 chunk << "\" />";
                 break;
+            case CMARK_NODE_EMPH:
+                VLOG(1) << "Close em tag";
+                chunk << "</em>";
+                break;
+            case CMARK_NODE_STRONG:
+                VLOG(1) << "Closing strong tag";
+                chunk << "</strong>";
+                break;
             default:
                 VLOG(1) << "Ignoring node";
                 break;
             }
-            chunk << "\n";
         }
+
+        VLOG(3) << "Chunk to apend: \"" << chunk.str() << "\"";
 
         if((body.capacity() - body.size() - chunk.str().size()) < 0)
         {
@@ -270,7 +291,8 @@ void PrimaryHandler::renderArticle(const string &data)
             body += chunk.str();
         }
     }
-    
+
+    VLOG(3) << "Body to prepend: \"" << body << "\"";
     prependResponse(body);
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;

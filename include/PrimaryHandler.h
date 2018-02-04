@@ -31,6 +31,19 @@ namespace mimeographer
 
 class PrimaryHandler : public HandlerBase
 {
+    FRIEND_TEST(PrimaryHandlerTest, buildFrontPage);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_header);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_lists);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_paragraph);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_blockquote);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_link);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_image);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_codeblock);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_htmlblock);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_htmlinline);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_em);
+    FRIEND_TEST(PrimaryHandlerTest, renderArticle_strong);
+
 private:
     void buildFrontPage();
     void renderArticle(const std::string &data);
