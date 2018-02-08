@@ -54,16 +54,16 @@ TEST_F(DBConnTest, getHeadlines)
 
     DBConn::headline testData;
     ASSERT_NO_THROW({ testData = testConn.getHeadlines(); });
-    ASSERT_EQ(testData.size(), 10);
+    ASSERT_EQ(testData.size(), 2);
     tuple<int, string, string> data = testData[0];
     
     ASSERT_EQ(get<0>(testData[0]), 1);
     ASSERT_EQ(get<1>(testData[0]), string("Test 1"));
     ASSERT_EQ(get<2>(testData[0]), leadline);
 
-    ASSERT_EQ(get<0>(testData[4]), 5);
-    ASSERT_EQ(get<1>(testData[4]), string("Test 5"));
-    ASSERT_EQ(get<2>(testData[4]), leadline);
+    ASSERT_EQ(get<0>(testData[1]), 2);
+    ASSERT_EQ(get<1>(testData[1]), string("Test 2"));
+    ASSERT_EQ(get<2>(testData[1]), string("Start of 1st paragraph"));
 }
 
 TEST_F(DBConnTest, getArticle)
