@@ -78,14 +78,10 @@ void EditHandler::processLogin()
     if(login && pass && 
         login->type == PostParamType::VALUE && pass->type == PostParamType::VALUE)
     {
-        auto uuid = getCookie(cookieName);
-        if(!uuid)
-            uuid = "";
-
         VLOG(3) << "Login credentials supplied"
             << "\n\tLogin: " << login->value
             << "\n\tPassword: NOT PRINTED"
-            << "\n\tUUID from cookie: " << *uuid;
+            << "\n\tUUID from cookie: " << session.getUUID();
 
         VLOG(1) << "Check provided credential";
         if(session.authenticateLogin(login->value, pass->value))
