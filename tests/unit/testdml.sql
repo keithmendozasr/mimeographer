@@ -3,7 +3,7 @@ TRUNCATE users,article RESTART IDENTITY CASCADE;
 INSERT INTO users(userid, fullname, email, salt, password, isactive) VALUES
     (1, 'Test user', 'a@a.com',
     'VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow',
-    'kt56uQBSTP-bT4ybmGCgsmU48BBx__mcE61X7UsWxpE', true),
+    'ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U', true),
     (2, 'Inactive User', 'off@example.com', '', '', false);
     
 INSERT INTO article(title, preview, content, userid, publishdate) VALUES

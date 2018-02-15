@@ -104,7 +104,7 @@ TEST_F(DBConnTest, getUserInfo)
     ASSERT_STREQ(get<1>(data).c_str(), "Test user");
     ASSERT_EQ(get<2>(data), login);
     ASSERT_STREQ(get<3>(data).c_str(), "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
-    ASSERT_STREQ(get<4>(data).c_str(), "kt56uQBSTP-bT4ybmGCgsmU48BBx__mcE61X7UsWxpE");
+    ASSERT_STREQ(get<4>(data).c_str(), "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U");
 
     ASSERT_NO_THROW({ testData = testConn.getUserInfo("asdf@example.com"); });
     ASSERT_FALSE(testData);

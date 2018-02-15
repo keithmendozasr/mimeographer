@@ -67,7 +67,7 @@ TEST_F(UserSessionTest, hashPassword)
     auto ret = obj.hashPassword("123456", salt);
     auto hashTest = get<0>(ret);
     auto saltTest = get<1>(ret);
-    ASSERT_EQ(hashTest, string("kt56uQBSTP-bT4ybmGCgsmU48BBx__mcE61X7UsWxpE"));
+    ASSERT_EQ(hashTest, string("ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U"));
     ASSERT_EQ(saltTest, salt);
 }
 
@@ -83,6 +83,12 @@ TEST_F(UserSessionTest, authenticateLogin)
     ASSERT_NO_THROW({
         UserSession obj(db);
         ASSERT_FALSE(obj.authenticateLogin("blank@example.com", "123456"));
+        ASSERT_FALSE(obj.userId);
+    });
+
+    ASSERT_NO_THROW({
+        UserSession obj(db);
+        ASSERT_FALSE(obj.authenticateLogin("a@a.com", "9876"));
         ASSERT_FALSE(obj.userId);
     });
 }

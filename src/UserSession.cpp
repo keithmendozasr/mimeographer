@@ -129,8 +129,9 @@ tuple<string,string> UserSession::hashPassword(const string &pass,
 
     VLOG(1) << "Calculate hash.";
     VLOG(3) << "Salt to use: " << useSalt;
+    auto saltedPass = useSalt + pass;
     unsigned char hash[32];
-    OpenSSLHash::sha256(MutableByteRange(hash, 32), ByteRange((unsigned char *)useSalt.c_str(), (size_t)useSalt.size()));
+    OpenSSLHash::sha256(MutableByteRange(hash, 32), ByteRange((unsigned char *)saltedPass.c_str(), (size_t)saltedPass.size()));
     string hashStr = Base64::urlEncode(ByteRange(hash, 32));
     VLOG(2) << "sha256 output: " << hashStr;
     
@@ -153,7 +154,11 @@ const bool UserSession::authenticateLogin(const std::string &email,
         auto userInfo = *dbRet;
         auto hash = hashPassword(password, get<3>(userInfo));
         auto savePass = get<0>(hash);
-        if(savePass != get<4>(userInfo))
+        auto expectPass = get<4>(userInfo);
+
+        VLOG(3) << "Save pass: " << savePass << "\n"
+            << "expectPass: " << expectPass;
+        if(savePass != expectPass)
             LOG(INFO) << "Password mismatch";
         else
         {   
