@@ -30,6 +30,9 @@ namespace mimeographer
 
 class EditHandler : public HandlerBase
 {
+    FRIEND_TEST(EditHandlerTest, buildLoginPage);
+    FRIEND_TEST(EditHandlerTest, processLogin);
+
 private:
     void buildLoginPage(const bool &showMismatch = false);
     void processLogin();

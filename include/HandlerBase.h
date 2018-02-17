@@ -35,6 +35,7 @@
 
 namespace mimeographer 
 {
+
 class HandlerBase : public proxygen::RequestHandler 
 {
     FRIEND_TEST(HandlerBaseTest, buildPageHeader);
@@ -55,6 +56,9 @@ class HandlerBase : public proxygen::RequestHandler
     FRIEND_TEST(PrimaryHandlerTest, renderArticle_htmlinline);
     FRIEND_TEST(PrimaryHandlerTest, renderArticle_em);
     FRIEND_TEST(PrimaryHandlerTest, renderArticle_strong);
+
+    FRIEND_TEST(EditHandlerTest, buildLoginPage);
+    FRIEND_TEST(EditHandlerTest, processLogin);
 
 protected:
     enum PostParamType
