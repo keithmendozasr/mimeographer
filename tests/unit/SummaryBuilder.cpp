@@ -49,10 +49,10 @@ TEST(SummaryBuilderTest, buildTitleClean)
                 cmark_iter_free(iter);
         }
     ));
-    ASSERT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
-    ASSERT_NO_THROW({
+    EXPECT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
+    EXPECT_NO_THROW({
         obj.buildTitle();
-        ASSERT_EQ(obj.title, expectText);
+        EXPECT_EQ(obj.title, expectText);
     });
 }
 
@@ -81,10 +81,10 @@ TEST(SummaryBuilderTest, buildTitleWithInlines)
                 cmark_iter_free(iter);
         }
     ));
-    ASSERT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
-    ASSERT_NO_THROW({
+    EXPECT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
+    EXPECT_NO_THROW({
         obj.buildTitle();
-        ASSERT_EQ(obj.title, expectText);
+        EXPECT_EQ(obj.title, expectText);
     });
 }
 
@@ -116,10 +116,10 @@ TEST(SummaryBuilderTest, buildPreviewClean)
         }
     ));
 
-    ASSERT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
-    ASSERT_NO_THROW({
+    EXPECT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
+    EXPECT_NO_THROW({
         obj.buildPreview();
-        ASSERT_EQ(obj.preview, expectedText);
+        EXPECT_EQ(obj.preview, expectedText);
     });
 }
 
@@ -159,10 +159,10 @@ TEST(SummaryBuilderTest, buildPreviewWithInlines)
         }
     ));
 
-    ASSERT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
-    ASSERT_NO_THROW({
+    EXPECT_EQ(cmark_iter_next(obj.iterator.get()), CMARK_EVENT_ENTER);
+    EXPECT_NO_THROW({
         obj.buildPreview();
-        ASSERT_EQ(obj.preview, expectText);
+        EXPECT_EQ(obj.preview, expectText);
     });
 }
 
@@ -198,10 +198,10 @@ TEST(SummaryBuilderTest, build)
         "entum ante. Nam id urna hendrerit, mattis neque u";
 
     SummaryBuilder obj;
-    ASSERT_NO_THROW({
+    EXPECT_NO_THROW({
         obj.build(markdown);
-        ASSERT_EQ(obj.getTitle(), expectedTitle);
-        ASSERT_EQ(obj.getPreview(), expectedPreview);
+        EXPECT_EQ(obj.getTitle(), expectedTitle);
+        EXPECT_EQ(obj.getPreview(), expectedPreview);
     });
 }
 

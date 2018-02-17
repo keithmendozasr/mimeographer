@@ -47,7 +47,7 @@ protected:
 TEST_F(UserSessionTest, constructor)
 {
     UserSession obj(db);
-    ASSERT_STREQ(obj.uuid.c_str(), "");
+    EXPECT_STREQ(obj.uuid.c_str(), "");
 }
 
 TEST_F(UserSessionTest, initSession)
@@ -56,7 +56,7 @@ TEST_F(UserSessionTest, initSession)
         db.saveSession(testUUID);
         UserSession obj(db);
         obj.initSession(testUUID);
-        ASSERT_STREQ(obj.uuid.c_str(), testUUID);
+        EXPECT_STREQ(obj.uuid.c_str(), testUUID);
     });
 }
 
@@ -67,8 +67,8 @@ TEST_F(UserSessionTest, hashPassword)
     auto ret = obj.hashPassword("123456", salt);
     auto hashTest = get<0>(ret);
     auto saltTest = get<1>(ret);
-    ASSERT_EQ(hashTest, string("ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U"));
-    ASSERT_EQ(saltTest, salt);
+    EXPECT_EQ(hashTest, string("ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U"));
+    EXPECT_EQ(saltTest, salt);
 }
 
 TEST_F(UserSessionTest, authenticateLogin)
@@ -76,20 +76,20 @@ TEST_F(UserSessionTest, authenticateLogin)
     ASSERT_NO_THROW({
         UserSession obj(db);
         obj.initSession(testUUID);
-        ASSERT_TRUE(obj.authenticateLogin("a@a.com", "123456"));
-        ASSERT_EQ(obj.userId.value(), 1);
+        EXPECT_TRUE(obj.authenticateLogin("a@a.com", "123456"));
+        EXPECT_EQ(obj.userId.value(), 1);
     });
 
-    ASSERT_NO_THROW({
+    EXPECT_NO_THROW({
         UserSession obj(db);
-        ASSERT_FALSE(obj.authenticateLogin("blank@example.com", "123456"));
-        ASSERT_FALSE(obj.userId);
+        EXPECT_FALSE(obj.authenticateLogin("blank@example.com", "123456"));
+        EXPECT_FALSE(obj.userId);
     });
 
-    ASSERT_NO_THROW({
+    EXPECT_NO_THROW({
         UserSession obj(db);
-        ASSERT_FALSE(obj.authenticateLogin("a@a.com", "9876"));
-        ASSERT_FALSE(obj.userId);
+        EXPECT_FALSE(obj.authenticateLogin("a@a.com", "9876"));
+        EXPECT_FALSE(obj.userId);
     });
 }
 
@@ -100,15 +100,15 @@ TEST_F(UserSessionTest, userAuthenticated)
         db.saveSession(testUUID);
         UserSession obj(db);
         obj.initSession(testUUID);
-        ASSERT_FALSE(obj.userAuthenticated());
+        EXPECT_FALSE(obj.userAuthenticated());
         obj.authenticateLogin("a@a.com", "123456");
-        ASSERT_TRUE(obj.userAuthenticated());
+        EXPECT_TRUE(obj.userAuthenticated());
     }
 
     {
         UserSession obj(db);
         obj.initSession(testUUID);
-        ASSERT_TRUE(obj.userAuthenticated());
+        EXPECT_TRUE(obj.userAuthenticated());
     }
 }
 

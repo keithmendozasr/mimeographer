@@ -29,18 +29,18 @@ TEST_F(DBConnTest, urlEncode)
 
 TEST_F(DBConnTest, constructor)
 {
-    ASSERT_THROW({
+    EXPECT_THROW({
         DBConn conn("testuser", "", "localhost", "");
-        ASSERT_EQ(conn.conn, nullptr);
+        EXPECT_EQ(conn.conn, nullptr);
     }, DBConn::DBError);
 
-    ASSERT_NO_THROW({
+    EXPECT_NO_THROW({
         DBConn("testuser", "123456", "localhost", "mimeographer");
     });
 
     {
         DBConn conn("testuser", "123456", "localhost", "mimeographer");
-        ASSERT_NE(conn.conn, nullptr);
+        EXPECT_NE(conn.conn, nullptr);
     }
 }
 
@@ -53,17 +53,17 @@ TEST_F(DBConnTest, getHeadlines)
         ", tincidunt tortor. Pellentesque euismod amet.";
 
     DBConn::headline testData;
-    ASSERT_NO_THROW({ testData = testConn.getHeadlines(); });
-    ASSERT_EQ(testData.size(), 2);
+    EXPECT_NO_THROW({ testData = testConn.getHeadlines(); });
+    EXPECT_EQ(testData.size(), 2);
     tuple<int, string, string> data = testData[0];
     
-    ASSERT_EQ(get<0>(testData[0]), 1);
-    ASSERT_EQ(get<1>(testData[0]), string("Test 1"));
-    ASSERT_EQ(get<2>(testData[0]), leadline);
+    EXPECT_EQ(get<0>(testData[0]), 1);
+    EXPECT_EQ(get<1>(testData[0]), string("Test 1"));
+    EXPECT_EQ(get<2>(testData[0]), leadline);
 
-    ASSERT_EQ(get<0>(testData[1]), 2);
-    ASSERT_EQ(get<1>(testData[1]), string("Test 2"));
-    ASSERT_EQ(get<2>(testData[1]), string("Start of 1st paragraph"));
+    EXPECT_EQ(get<0>(testData[1]), 2);
+    EXPECT_EQ(get<1>(testData[1]), string("Test 2"));
+    EXPECT_EQ(get<2>(testData[1]), string("Start of 1st paragraph"));
 }
 
 TEST_F(DBConnTest, getArticle)
@@ -86,9 +86,9 @@ TEST_F(DBConnTest, getArticle)
         " dictumst. Nullam tempus vestibulum nisi eget cras amet.";
 
     string testData;
-    ASSERT_NO_THROW({
+    EXPECT_NO_THROW({
         auto testData = testConn.getArticle("1");
-        ASSERT_EQ(testData, content);
+        EXPECT_EQ(testData, content);
     });
 }
 
@@ -96,49 +96,49 @@ TEST_F(DBConnTest, getUserInfo)
 {
     const string login = "a@a.com";
     DBConn::UserRecord testData;
-    ASSERT_NO_THROW({ testData = testConn.getUserInfo(login); });
-    ASSERT_TRUE(testData);
+    EXPECT_NO_THROW({ testData = testConn.getUserInfo(login); });
+    EXPECT_TRUE(testData);
     auto data = *testData;
 
-    ASSERT_EQ(get<0>(data), 1);
-    ASSERT_STREQ(get<1>(data).c_str(), "Test user");
-    ASSERT_EQ(get<2>(data), login);
-    ASSERT_STREQ(get<3>(data).c_str(), "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
-    ASSERT_STREQ(get<4>(data).c_str(), "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U");
+    EXPECT_EQ(get<0>(data), 1);
+    EXPECT_STREQ(get<1>(data).c_str(), "Test user");
+    EXPECT_EQ(get<2>(data), login);
+    EXPECT_STREQ(get<3>(data).c_str(), "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+    EXPECT_STREQ(get<4>(data).c_str(), "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U");
 
-    ASSERT_NO_THROW({ testData = testConn.getUserInfo("asdf@example.com"); });
-    ASSERT_FALSE(testData);
+    EXPECT_NO_THROW({ testData = testConn.getUserInfo("asdf@example.com"); });
+    EXPECT_FALSE(testData);
 
-    ASSERT_NO_THROW({ testData = testConn.getUserInfo("off@example.com"); });
-    ASSERT_FALSE(testData);
+    EXPECT_NO_THROW({ testData = testConn.getUserInfo("off@example.com"); });
+    EXPECT_FALSE(testData);
 }
 
 TEST_F(DBConnTest, saveSession)
 {
-    ASSERT_NO_THROW({ testConn.saveSession(testUUID); });
+    EXPECT_NO_THROW({ testConn.saveSession(testUUID); });
 
     // Test update last_seen
-    ASSERT_NO_THROW({ testConn.saveSession(testUUID); });
+    EXPECT_NO_THROW({ testConn.saveSession(testUUID); });
 }
 
 TEST_F(DBConnTest, mapUuidToUser)
 {
-    ASSERT_NO_THROW({ testConn.mapUuidToUser(testUUID, testUserId); });
+    EXPECT_NO_THROW({ testConn.mapUuidToUser(testUUID, testUserId); });
 
     // Test mapping already present
-    ASSERT_NO_THROW({ testConn.mapUuidToUser(testUUID, testUserId); });
+    EXPECT_NO_THROW({ testConn.mapUuidToUser(testUUID, testUserId); });
 }
 
 TEST_F(DBConnTest, getMappedUser)
 {
-    ASSERT_NO_THROW({
+    EXPECT_NO_THROW({
         auto session = testConn.getSessionInfo(testUUID);
-        ASSERT_TRUE(session);
-        ASSERT_EQ(get<1>(*session), testUserId);
+        EXPECT_TRUE(session);
+        EXPECT_EQ(get<1>(*session), testUserId);
     });
 
-    ASSERT_NO_THROW({
-        ASSERT_FALSE(testConn.getSessionInfo("11111111-1111-1111-1111-111111111111"));
+    EXPECT_NO_THROW({
+        EXPECT_FALSE(testConn.getSessionInfo("11111111-1111-1111-1111-111111111111"));
     });
 }
 

@@ -54,7 +54,7 @@ TEST_F(EditHandlerTest, buildLoginPage)
         EditHandler obj(config);
         obj.buildLoginPage();
         IOBufEqual isEq;
-        ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+        EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
     }
 
     {
@@ -68,7 +68,7 @@ TEST_F(EditHandlerTest, buildLoginPage)
         EditHandler obj(config);
         IOBufEqual isEq;
         obj.buildLoginPage(true);
-        ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+        EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
     }
 }
 

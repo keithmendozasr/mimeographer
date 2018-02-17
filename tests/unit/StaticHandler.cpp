@@ -29,11 +29,11 @@ TEST(StaticHandlerTest, parsePath)
     Config config(FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName,
             FLAGS_dbPort, "/tmp", "localhost", "/tmp");
     StaticHandler obj(config);
-    ASSERT_NO_THROW({
-        ASSERT_EQ(obj.parsePath("asdf+ddd%20yyy%23"), string("asdf ddd yyy#"));
+    EXPECT_NO_THROW({
+        EXPECT_EQ(obj.parsePath("asdf+ddd%20yyy%23"), string("asdf ddd yyy#"));
     });
 
-    ASSERT_THROW({ obj.parsePath("asdf%2R"); }, HandlerError);
+    EXPECT_THROW({ obj.parsePath("asdf%2R"); }, HandlerError);
 }
 
 } // namespace

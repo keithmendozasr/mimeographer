@@ -88,7 +88,7 @@ TEST_F(HandlerBaseTest, buildPageHeader)
     HandlerBaseObj obj(config);
     auto testData = obj.buildPageHeader();
     auto f = IOBufEqual();
-    ASSERT_TRUE(f(expectVal, testData));
+    EXPECT_TRUE(f(expectVal, testData));
 }
 
 TEST_F(HandlerBaseTest, buildPageTrailer)
@@ -113,7 +113,7 @@ TEST_F(HandlerBaseTest, buildPageTrailer)
     HandlerBaseObj obj(config);
     auto testData = obj.buildPageTrailer();
     auto f = IOBufEqual();
-    ASSERT_TRUE(f(expectVal, testData));
+    EXPECT_TRUE(f(expectVal, testData));
 }
 
 TEST_F(HandlerBaseTest, prependResponse)
@@ -124,18 +124,18 @@ TEST_F(HandlerBaseTest, prependResponse)
     auto testString = "From empty";
     auto expectedVal = move(IOBuf::copyBuffer(testString));
     obj.prependResponse(testString);
-    ASSERT_TRUE(equalityOp(obj.handlerResponse, expectedVal));
+    EXPECT_TRUE(equalityOp(obj.handlerResponse, expectedVal));
 
     testString = "Second string";
     expectedVal->prependChain(move(IOBuf::copyBuffer(testString)));
     obj.prependResponse(testString);
-    ASSERT_TRUE(equalityOp(obj.handlerResponse, expectedVal));
+    EXPECT_TRUE(equalityOp(obj.handlerResponse, expectedVal));
 }
 
 TEST_F(HandlerBaseTest, getPostParam)
 {
     HandlerBaseObj obj(config);
-    ASSERT_EQ(obj.getPostParam("a"), boost::none);
+    EXPECT_EQ(obj.getPostParam("a"), boost::none);
 
     obj.postParams["a"] = { HandlerBase::PostParamType::VALUE, "field 1", "", "" };
     obj.postParams["somefile"] = {
@@ -145,30 +145,28 @@ TEST_F(HandlerBaseTest, getPostParam)
 
     auto param = obj.getPostParam("a");
     EXPECT_TRUE(param);
-    ASSERT_EQ(param->type, HandlerBase::PostParamType::VALUE);
-    ASSERT_EQ(param->value, string("field 1"));
+    EXPECT_EQ(param->type, HandlerBase::PostParamType::VALUE);
+    EXPECT_EQ(param->value, string("field 1"));
 
     param = obj.getPostParam("somefile");
     EXPECT_TRUE(param);
-    ASSERT_EQ(param->type, HandlerBase::PostParamType::FILE_UPLOAD);
-    ASSERT_EQ(param->value, string(""));
-    ASSERT_EQ(param->filename, string("uploadfile.txt"));
-    ASSERT_EQ(param->localFilename, string("localversion"));
+    EXPECT_EQ(param->type, HandlerBase::PostParamType::FILE_UPLOAD);
+    EXPECT_EQ(param->value, string(""));
+    EXPECT_EQ(param->filename, string("uploadfile.txt"));
+    EXPECT_EQ(param->localFilename, string("localversion"));
 }
 
 TEST_F(HandlerBaseTest, parseCookies)
 {
-    {
-        HandlerBaseObj obj(config);
-        obj.parseCookies("cookie1=asdfasdf; b=bbbb");
-        ASSERT_EQ(obj.cookieJar.size(), 2);
-        ASSERT_NO_THROW( {
-            ASSERT_EQ(obj.cookieJar.at("cookie1"), "asdfasdf");
-        });
-        ASSERT_NO_THROW( {
-            ASSERT_EQ(obj.cookieJar.at("b"), "bbbb");
-        });
-    }
+    HandlerBaseObj obj(config);
+    obj.parseCookies("cookie1=asdfasdf; b=bbbb");
+    EXPECT_EQ(obj.cookieJar.size(), 2);
+    EXPECT_NO_THROW( {
+        EXPECT_EQ(obj.cookieJar.at("cookie1"), "asdfasdf");
+    });
+    EXPECT_NO_THROW( {
+        EXPECT_EQ(obj.cookieJar.at("b"), "bbbb");
+    });
 }
 
 TEST_F(HandlerBaseTest, makeMenuButtons)
@@ -178,7 +176,7 @@ TEST_F(HandlerBaseTest, makeMenuButtons)
         const string testData =
             "<a href=\"/edit/link1\" class=\"btn btn-primary\">link 1</a>";
         vector<pair<string,string>> data = { { "/edit/link1", "link 1"} };
-        ASSERT_EQ(obj.makeMenuButtons(data), testData);
+        EXPECT_EQ(obj.makeMenuButtons(data), testData);
     }
 
     {
@@ -189,7 +187,7 @@ TEST_F(HandlerBaseTest, makeMenuButtons)
             { "/edit/link1", "link 1"},
             { "/edit/link2", "link 2"}
         };
-        ASSERT_EQ(obj.makeMenuButtons(data), testData);
+        EXPECT_EQ(obj.makeMenuButtons(data), testData);
     }
 }
 

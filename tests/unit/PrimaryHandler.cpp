@@ -54,7 +54,7 @@ TEST_F(PrimaryHandlerTest, buildFrontPage)
     PrimaryHandler obj(config);
     obj.buildFrontPage();
     IOBufEqual isEq;
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_header)
@@ -66,7 +66,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_header)
         "<h2>Header 2</h2>\n"
     )));
     obj.renderArticle("# Header 1\n## Header 2");
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_lists)
@@ -83,7 +83,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_lists)
         "1. Item 1\r\n1. Item 2\r\n"
         "* Unordered 1\r\n* Unordered 2"
     );
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_paragraph)
@@ -101,7 +101,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_paragraph)
         "* Unordered item\n"
         "1. Ordered item"
     );
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_blockquote)
@@ -117,7 +117,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_blockquote)
         "> Blockquote line 1\r\n"
         "> Blockquote line 2\r\n"
     );
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_link)
@@ -132,7 +132,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_link)
         "[blah](http://example.com/blah)\r\n\r\n"
         "[blah](http://example.com/blah \"blah blah\")"
     );
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_image)
@@ -150,7 +150,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_image)
         "![blah](pic2.png)\r\n"
         "![blah](pic3.png \"title\")"
     );
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
     
 TEST_F(PrimaryHandlerTest, renderArticle_codeblock)
@@ -173,7 +173,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_codeblock)
         "}\n"
         "```"
     );
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_htmlblock)
@@ -193,7 +193,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_htmlblock)
         "blockquote line 2\r\n"
         "</blockquote>"
     );
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_htmlinline)
@@ -205,7 +205,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_htmlinline)
     )));
 
     obj.renderArticle("<em>Emphasis</em><strong>Strong</strong>");
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_em)
@@ -217,7 +217,7 @@ TEST_F(PrimaryHandlerTest, renderArticle_em)
     )));
 
     obj.renderArticle("_Emphasis_");
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_strong)
@@ -229,6 +229,6 @@ TEST_F(PrimaryHandlerTest, renderArticle_strong)
     )));
 
     obj.renderArticle("__Strong__");
-    ASSERT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
 }
 } // namespace mimeographer
