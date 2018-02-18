@@ -34,6 +34,8 @@ class UserSession
     FRIEND_TEST(UserSessionTest, hashPassword);
     FRIEND_TEST(UserSessionTest, authenticateLogin);
 
+    FRIEND_TEST(HandlerBaseTest, buildPageHeader);
+
 private:
     DBConn &db;
     std::string uuid;

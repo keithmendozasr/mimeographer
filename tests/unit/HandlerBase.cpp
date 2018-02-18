@@ -49,7 +49,7 @@ protected:
 
 TEST_F(HandlerBaseTest, buildPageHeader)
 {
-    unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer(
+    const string headerPart1 =
         "<!doctype html>\n"
         "<html lang=\"en\">\n"
         "<head>\n"
@@ -75,19 +75,34 @@ TEST_F(HandlerBaseTest, buildPageHeader)
                 "<a class=\"nav-item nav-link\" href=\"/about\">Archives</a>"
                 "<a class=\"nav-item nav-link\" href=\"/about\">About</a>"
             "</div>"
-            "<div class=\"navbar-nav ml-auto\">"
-                "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>"
-            "</div>"
-        "</div>"
-        "</nav>"
+            "<div class=\"navbar-nav ml-auto\">";
+
+    const string headerPart2 =
+                "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>\n"
+            "</div>\n"
+        "</div>\n"
+        "</nav>\n"
         "<div class=\"container-fluid\">\n"
         "<div class=\"row\">\n"
         "<div class=\"col col-10 offset-1\">\n"
-        "<!-- BEGIN PAGE CONTENT -->\n")));
+        "<!-- BEGIN PAGE CONTENT -->\n";
+    unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer( headerPart1 + headerPart2)));
 
     HandlerBaseObj obj(config);
     auto testData = obj.buildPageHeader();
     auto f = IOBufEqual();
+    EXPECT_TRUE(f(expectVal, testData));
+
+    expectVal = move(IOBuf::copyBuffer(
+        headerPart1 +
+        "<a class=\"nav-item nav-link\" href=\"/edit/new\">New Article</a>\n"
+        "<a class=\"nav-item nav-link\" href=\"/edit/article\">Edit Article</a>\n"
+        "<a class=\"nav-item nav-link\" href=\"/edit/upload\">Upload Image</a>\n"
+        "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n" +
+        headerPart2
+    ));
+    obj.session.userId = 1;
+    testData = obj.buildPageHeader();
     EXPECT_TRUE(f(expectVal, testData));
 }
 

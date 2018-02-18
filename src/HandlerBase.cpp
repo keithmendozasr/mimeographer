@@ -140,7 +140,7 @@ unique_ptr<IOBuf> HandlerBase::buildPageHeader()
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
-    static const string templateHeader = 
+    string templateHeader = 
         "<!doctype html>\n"
         "<html lang=\"en\">\n"
         "<head>\n"
@@ -168,11 +168,25 @@ unique_ptr<IOBuf> HandlerBase::buildPageHeader()
                 "<a class=\"nav-item nav-link\" href=\"/about\">Archives</a>"
                 "<a class=\"nav-item nav-link\" href=\"/about\">About</a>"
             "</div>"
-            "<div class=\"navbar-nav ml-auto\">"
-                "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>"
-            "</div>"
-        "</div>"
-        "</nav>"
+            "<div class=\"navbar-nav ml-auto\">";
+
+    if(session.userAuthenticated())
+    {
+        VLOG(1) << "User authenticated, add editor menu items";
+        templateHeader +=
+                "<a class=\"nav-item nav-link\" href=\"/edit/new\">New Article</a>\n"
+                "<a class=\"nav-item nav-link\" href=\"/edit/article\">Edit Article</a>\n"
+                "<a class=\"nav-item nav-link\" href=\"/edit/upload\">Upload Image</a>\n"
+                "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n";
+    }
+    else
+        VLOG(1) << "User not authenticated";
+
+    templateHeader +=
+                "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>\n"
+            "</div>\n"
+        "</div>\n"
+        "</nav>\n"
 
         // Opening display container
         "<div class=\"container-fluid\">\n"
