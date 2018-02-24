@@ -78,7 +78,6 @@ TEST_F(HandlerBaseTest, buildPageHeader)
             "<div class=\"navbar-nav ml-auto\">\n";
 
     const string headerPart2 =
-                "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>\n"
             "</div>\n"
         "</div>\n"
         "</nav>\n"
@@ -86,7 +85,11 @@ TEST_F(HandlerBaseTest, buildPageHeader)
         "<div class=\"row\">\n"
         "<div class=\"col col-10 offset-1\">\n"
         "<!-- BEGIN PAGE CONTENT -->\n";
-    unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer( headerPart1 + headerPart2)));
+    unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer(
+        headerPart1 +
+        "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>\n" +
+        headerPart2
+    )));
 
     HandlerBaseObj obj(config);
     auto testData = obj.buildPageHeader();
@@ -98,7 +101,8 @@ TEST_F(HandlerBaseTest, buildPageHeader)
         "<a class=\"nav-item nav-link\" href=\"/edit/new\">New Article</a>\n"
         "<a class=\"nav-item nav-link\" href=\"/edit/article\">Edit Article</a>\n"
         "<a class=\"nav-item nav-link\" href=\"/edit/upload\">Upload Image</a>\n"
-        "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n" +
+        "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n"
+        "<a class=\"nav-item nav-link\" href=\"/edit/logout\">Logout</a>\n" +
         headerPart2
     ));
     obj.session.userId = 1;

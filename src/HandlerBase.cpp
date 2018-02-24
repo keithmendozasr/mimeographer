@@ -177,13 +177,17 @@ unique_ptr<IOBuf> HandlerBase::buildPageHeader()
                 "<a class=\"nav-item nav-link\" href=\"/edit/new\">New Article</a>\n"
                 "<a class=\"nav-item nav-link\" href=\"/edit/article\">Edit Article</a>\n"
                 "<a class=\"nav-item nav-link\" href=\"/edit/upload\">Upload Image</a>\n"
-                "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n";
+                "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n"
+                "<a class=\"nav-item nav-link\" href=\"/edit/logout\">Logout</a>\n";
     }
     else
+    {
         VLOG(1) << "User not authenticated";
+        templateHeader +=
+                "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>\n";
+    }
 
     templateHeader +=
-                "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>\n"
             "</div>\n"
         "</div>\n"
         "</nav>\n"

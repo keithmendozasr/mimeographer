@@ -44,6 +44,7 @@ private:
     void buildUploadPage();
     void processUpload();
     void processViewUpload();
+    void processLogout();
 
 public:
     EditHandler(const Config &config) : HandlerBase(config) {}

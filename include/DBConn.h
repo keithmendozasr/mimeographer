@@ -161,6 +161,13 @@ public:
     void mapUuidToUser(const std::string &uuid, const int &userId);
 
     ////
+    /// Remove authenticated user from session
+    /// \param uuid UUID to associate with user id
+    /// \param userID User ID to associated to UUID
+    ////
+    void unmapUuidToUser(const std::string &uuid, const int &userId);
+
+    ////
     /// Return the session ID and associated user id--if any--if the given uuid
     /// was used in the last hour
     /// \param uuid UUID to retrieve

@@ -275,6 +275,19 @@ void DBConn::mapUuidToUser(const string &uuid, const int &userId)
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
+void DBConn::unmapUuidToUser(const string &uuid, const int &userId)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    const static string query = "DELETE FROM user_session WHERE sessionid = $1 "
+        "AND userid = $2";
+
+    execQuery(query, array<const char *,2>({
+        uuid.c_str(), to_string(userId).c_str()
+    }));
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
 DBConn::SessionInfo DBConn::getSessionInfo(const string &uuid)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;

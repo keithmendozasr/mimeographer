@@ -431,6 +431,14 @@ void EditHandler::processViewUpload()
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
+void EditHandler::processLogout()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    session.logoutUser();
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/");
+}
+
 void EditHandler::processRequest() 
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -492,6 +500,8 @@ void EditHandler::processRequest()
             processUpload();
         else if(path == "/edit/viewupload")
             processViewUpload();
+        else if(path == "/edit/logout")
+            processLogout();
         else
         {
             LOG(INFO) << path << "not handled";

@@ -101,6 +101,15 @@ public:
     /// \return true if csrfkey is the expected key
     ////
     const bool verifyCSRFKey(const std::string &csrfkey);
+
+    ////
+    /// "Logout" user
+    ////
+    void logoutUser()
+    {
+        db.unmapUuidToUser(uuid, *userId);
+        userId = boost::none;
+    }
 };
 
 } // namespace
