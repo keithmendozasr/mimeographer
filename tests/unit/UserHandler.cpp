@@ -18,7 +18,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "params.h"
-#include "EditHandler.h"
+#include "UserHandler.h"
 #include "HandlerRedirect.h"
 
 using namespace std;
@@ -27,20 +27,20 @@ using namespace folly;
 namespace mimeographer
 {
 
-class EditHandlerTest : public ::testing::Test
+class UserHandlerTest : public ::testing::Test
 {
 protected:
     Config config;
-    EditHandlerTest() :
+    UserHandlerTest() :
         config(FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName,
             FLAGS_dbPort, "/tmp", "localhost", "/tmp")
     {}
 };
 
-TEST_F(EditHandlerTest, buildLoginPage)
+TEST_F(UserHandlerTest, buildLoginPage)
 {
     auto form =
-        "<form method=\"post\" action=\"/edit/login\" enctype=\"multipart/form-data\" class=\"form-signin\" style=\"max-width:330px; margin:0 auto\">"
+        "<form method=\"post\" action=\"/user/login\" enctype=\"multipart/form-data\" class=\"form-signin\" style=\"max-width:330px; margin:0 auto\">"
         "<h2 class=\"form-signin-heading\">Please sign in</h2>"
         "<label for=\"inputEmail\" class=\"sr-only\">Email address</label>"
         "<input type=\"email\" name=\"login\" id=\"inputEmail\" class=\"form-control\" placeholder=\"Email address\" required autofocus>"
@@ -51,7 +51,7 @@ TEST_F(EditHandlerTest, buildLoginPage)
 
     {
         unique_ptr<folly::IOBuf> expectVal(move(IOBuf::copyBuffer(form)));
-        EditHandler obj(config);
+        UserHandler obj(config);
         obj.buildLoginPage();
         IOBufEqual isEq;
         EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
@@ -65,16 +65,16 @@ TEST_F(EditHandlerTest, buildLoginPage)
         )));
         expectVal->prependChain(move(IOBuf::copyBuffer(form)));
 
-        EditHandler obj(config);
+        UserHandler obj(config);
         IOBufEqual isEq;
         obj.buildLoginPage(true);
         EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
     }
 }
 
-TEST_F(EditHandlerTest, processLogin)
+TEST_F(UserHandlerTest, processLogin)
 {
-    EditHandler obj(config);
+    UserHandler obj(config);
     obj.postParams["login"] = {
         HandlerBase::PostParamType::VALUE,
         "a@a.com"

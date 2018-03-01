@@ -24,6 +24,8 @@
 #include "PrimaryHandler.h"
 #include "EditHandler.h"
 #include "StaticHandler.h"
+#include "UserHandler.h"
+
 using namespace mimeographer;
 using namespace proxygen;
 
@@ -86,6 +88,11 @@ public:
         {
             LOG(INFO) << "Processing static file";
             ptr = new StaticHandler(config);
+        }
+        else if(message->getPath().substr(0, 5) == "/user")
+        {
+            LOG(INFO) << "Processing user";
+            ptr = new UserHandler(config);
         }
         else
         {

@@ -87,7 +87,7 @@ TEST_F(HandlerBaseTest, buildPageHeader)
         "<!-- BEGIN PAGE CONTENT -->\n";
     unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer(
         headerPart1 +
-        "<a class=\"nav-item nav-link\" href=\"/edit/login\">Login</a>\n" +
+        "<a class=\"nav-item nav-link\" href=\"/user/login\">Login</a>\n" +
         headerPart2
     )));
 
@@ -102,7 +102,7 @@ TEST_F(HandlerBaseTest, buildPageHeader)
         "<a class=\"nav-item nav-link\" href=\"/edit/article\">Edit Article</a>\n"
         "<a class=\"nav-item nav-link\" href=\"/edit/upload\">Upload Image</a>\n"
         "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n"
-        "<a class=\"nav-item nav-link\" href=\"/edit/logout\">Logout</a>\n" +
+        "<a class=\"nav-item nav-link\" href=\"/user/logout\">Logout</a>\n" +
         headerPart2
     ));
     obj.session.userId = 1;

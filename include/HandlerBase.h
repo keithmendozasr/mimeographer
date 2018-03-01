@@ -56,9 +56,9 @@ class HandlerBase : public proxygen::RequestHandler
     FRIEND_TEST(PrimaryHandlerTest, renderArticle_htmlinline);
     FRIEND_TEST(PrimaryHandlerTest, renderArticle_em);
     FRIEND_TEST(PrimaryHandlerTest, renderArticle_strong);
-
-    FRIEND_TEST(EditHandlerTest, buildLoginPage);
-    FRIEND_TEST(EditHandlerTest, processLogin);
+    
+    FRIEND_TEST(UserHandlerTest, buildLoginPage);
+    FRIEND_TEST(UserHandlerTest, processLogin);
 
 protected:
     enum PostParamType

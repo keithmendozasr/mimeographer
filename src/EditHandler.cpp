@@ -36,72 +36,6 @@ using namespace boost::filesystem;
 namespace mimeographer 
 {
 
-void EditHandler::buildLoginPage(const bool &showMismatch)
-{
-    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
-
-	const static string html = 
-        "<form method=\"post\" action=\"/edit/login\" enctype=\"multipart/form-data\" class=\"form-signin\" style=\"max-width:330px; margin:0 auto\">"
-        "<h2 class=\"form-signin-heading\">Please sign in</h2>"
-        "<label for=\"inputEmail\" class=\"sr-only\">Email address</label>"
-        "<input type=\"email\" name=\"login\" id=\"inputEmail\" class=\"form-control\" placeholder=\"Email address\" required autofocus>"
-        "<label for=\"inputPassword\" class=\"sr-only\">Password</label>"
-        "<input type=\"password\" name=\"password\" id=\"inputPassword\" class=\"form-control\" placeholder=\"Password\" required>"
-        "<button class=\"btn btn-lg btn-primary btn-block\" type=\"submit\">Sign in</button>"
-        "</form>";
-
-    const static string mismatchBanner =
-        "<div class=\"alert alert-primary\" role=\"alert\">"
-            "Username/password incorrect. Try again!"
-        "</div>";
-    if(showMismatch)
-    {
-        VLOG(1) << "Showing mismatch banner";
-        prependResponse(mismatchBanner);
-    }
-    else
-        VLOG(1) << "Not showing mismatch banner";
-
-    prependResponse(html);
-
-    VLOG(2) << "End " << __PRETTY_FUNCTION__;
-}
-
-void EditHandler::processLogin()
-{
-    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
-
-    const static string cookieName = "session";
-
-    auto login = getPostParam("login");
-    auto pass = getPostParam("password");
-    if(login && pass && 
-        login->type == PostParamType::VALUE && pass->type == PostParamType::VALUE)
-    {
-        VLOG(3) << "Login credentials supplied"
-            << "\n\tLogin: " << login->value
-            << "\n\tPassword: NOT PRINTED"
-            << "\n\tUUID from cookie: " << session.getUUID();
-
-        VLOG(1) << "Check provided credential";
-        if(session.authenticateLogin(login->value, pass->value))
-        {
-            LOG(INFO) << "Login authenticated";
-            addCookie(cookieName, session.getUUID());
-            throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/edit");
-        }
-        else
-            LOG(INFO) << "Login rejected";
-    }
-    else
-        LOG(WARNING) << "POST missing login credential"; 
-
-    // If code gets here; let user retry
-    buildLoginPage(true);
-
-    VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
-}
-
 void EditHandler::buildMainPage()
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -431,14 +365,6 @@ void EditHandler::processViewUpload()
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
-void EditHandler::processLogout()
-{
-    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
-    session.logoutUser();
-    VLOG(2) << "End " << __PRETTY_FUNCTION__;
-    throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/");
-}
-
 void EditHandler::processRequest() 
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -446,69 +372,38 @@ void EditHandler::processRequest()
     auto path = getPath();
     if(path.back() == '/')
         path = path.substr(0,path.size()-1);
-
-    if(path == "/edit/login")
+    auto sessionId = getCookie("session");
+    VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
+    if(!session.userAuthenticated())
     {
-        if(getMethod() == "POST")
-        {
-            LOG(INFO) << "Process login request";
-            processLogin();
-        }
-        else if(getMethod() == "GET")
-        {
-            LOG(INFO) << "Display login page";
-            auto sessionId = getCookie("session");
-            VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
-            if(!session.userAuthenticated())
-                buildLoginPage();
-            else
-            {
-                VLOG(1) << "User has active session, proceed to edit home page";
+        LOG(INFO) << "Redirect to login page";
+        addCookie("session", session.getUUID());
 
-                VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
-                throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/edit");
-            }
-        }
+        VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
+        throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303,
+            "/user/login"
+        );
     }
+    
+    LOG(INFO) << "User is logged-in";
+    if(path == "/edit")
+        buildMainPage();
+    else if(path == "/edit/new")
+        buildEditor();
+    else if(path == "/edit/savearticle")
+        processSaveArticle();
+    else if(path.substr(0, strlen("/edit/article")) == "/edit/article")
+        processEditArticle();
+    else if(path == "/edit/upload")
+        processUpload();
+    else if(path == "/edit/viewupload")
+        processViewUpload();
     else
     {
-        VLOG(1) << "Not /edit/login";
+        LOG(INFO) << path << "not handled";
 
-        auto sessionId = getCookie("session");
-        VLOG(3) << "Value of session cookie: " << (sessionId ? *sessionId : "Not provided");
-        if(!session.userAuthenticated())
-        {
-            LOG(INFO) << "Redirect to login page";
-            addCookie("session", session.getUUID());
-
-            VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
-            throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303,
-                "/edit/login"
-            );
-        }
-        
-        LOG(INFO) << "User is logged-in";
-        if(path == "/edit")
-            buildMainPage();
-        else if(path == "/edit/new")
-            buildEditor();
-        else if(path == "/edit/savearticle")
-            processSaveArticle();
-        else if(path.substr(0, strlen("/edit/article")) == "/edit/article")
-            processEditArticle();
-        else if(path == "/edit/upload")
-            processUpload();
-        else if(path == "/edit/viewupload")
-            processViewUpload();
-        else if(path == "/edit/logout")
-            processLogout();
-        else
-        {
-            LOG(INFO) << path << "not handled";
-
-            VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
-            throw HandlerError(404, "File not found");
-        }
+        VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
+        throw HandlerError(404, "File not found");
     }
 
     VLOG(2) << "End " <<  __PRETTY_FUNCTION__;

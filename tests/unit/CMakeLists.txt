@@ -5,7 +5,6 @@ add_executable(unit_test main.cpp DBConn.cpp ../../src/DBConn.cpp
     SummaryBuilder.cpp ../../src/SummaryBuilder.cpp
     StaticHandler.cpp ../../src/StaticHandler.cpp
     PrimaryHandler.cpp ../../src/PrimaryHandler.cpp
-    EditHandler.cpp ../../src/EditHandler.cpp)
+    UserHandler.cpp ../../src/UserHandler.cpp)
 target_link_libraries(unit_test folly proxygenlib proxygenhttpserver gtest glog
     pq gflags uuid crypto cmark boost_filesystem boost_system)
-add_test(NAME mimeographer_unit_test COMMAND unit_test)
