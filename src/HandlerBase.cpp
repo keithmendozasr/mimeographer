@@ -136,6 +136,28 @@ void HandlerBase::PostBodyCallback::onFileEnd(bool end, uint64_t postBytesProces
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
+const std::string HandlerBase::generateDropdownMenu(const std::string &id,
+    const std::string &label, 
+    const std::vector<std::pair<std::string, std::string>> &items) const
+{
+    string retVal =
+    "<li class=\"nav-item dropdown\">\n"
+        "<a class=\"nav-link dropdown-toggle\" href=\"#\" "
+            "id=\"" + id + "\" role=\"button\" data-toggle=\"dropdown\" "
+            "aria-haspopup=\"true\" aria-expanded=\"false\">" +
+            label + "\n"
+        "</a>\n"
+        "<div class=\"dropdown-menu\" aria-labelledby=\"" + id + "\">\n";
+    for(auto i : items)
+    {
+        retVal += "<a class=\"dropdown-item\" href=\"" + i.first + "\">" +
+            i.second + "</a>\n";
+    }
+    retVal += "</div>\n</li>\n";
+
+    return move(retVal);
+}
+
 unique_ptr<IOBuf> HandlerBase::buildPageHeader() 
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -164,31 +186,42 @@ unique_ptr<IOBuf> HandlerBase::buildPageHeader()
             "aria-label=\"Toggle navigation\">\n"
         "<span class=\"navbar-toggler-icon\"></span></button>\n"
         "<div class=\"collapse navbar-collapse\" id=\"navbarNav\">\n"
-            "<div class=\"navbar-nav\">\n"
-                "<a class=\"nav-item nav-link\" href=\"/about\">Archives</a>\n"
-                "<a class=\"nav-item nav-link\" href=\"/about\">About</a>\n"
-            "</div>\n"
-            "<div class=\"navbar-nav ml-auto\">\n";
+            "<ul class=\"navbar-nav\">\n"
+                "<li class=\"nav-item\">\n"
+                    "<a class=\"nav-link\" href=\"/about\">Archives</a>\n"
+                "</li>\n"
+                "<li class=\"nav-item\">\n"
+                    "<a class=\"nav-link\" href=\"/about\">About</a>\n"
+                "</li>\n";
 
     if(session.userAuthenticated())
     {
         VLOG(1) << "User authenticated, add editor menu items";
-        templateHeader +=
-                "<a class=\"nav-item nav-link\" href=\"/edit/new\">New Article</a>\n"
-                "<a class=\"nav-item nav-link\" href=\"/edit/article\">Edit Article</a>\n"
-                "<a class=\"nav-item nav-link\" href=\"/edit/upload\">Upload Image</a>\n"
-                "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n"
-                "<a class=\"nav-item nav-link\" href=\"/user/logout\">Logout</a>\n";
+        templateHeader += generateDropdownMenu(
+            "artMgtDropdown", "Article Management",
+            {
+                { "/edit/new", "New Article" },
+                { "/edit/article", "Edit Article" },
+                { "/edit/upload", "Upload Image" },
+                { "/edit/viewupload", "View uploads" }
+            }) + 
+            generateDropdownMenu(
+                "userDropdown", "User",
+                {
+                    { "/user/logout", "Logout" }
+                });
     }
     else
     {
         VLOG(1) << "User not authenticated";
         templateHeader +=
-                "<a class=\"nav-item nav-link\" href=\"/user/login\">Login</a>\n";
+                "<li class=\"nav-item\">\n"
+                    "<a class=\"nav-link\" href=\"/user/login\">Login</a>\n"
+                "</li>\n";
     }
 
     templateHeader +=
-            "</div>\n"
+            "</ul>\n"
         "</div>\n"
         "</nav>\n"
 

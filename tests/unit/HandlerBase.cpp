@@ -71,14 +71,16 @@ TEST_F(HandlerBaseTest, buildPageHeader)
             "aria-label=\"Toggle navigation\">\n"
         "<span class=\"navbar-toggler-icon\"></span></button>\n"
         "<div class=\"collapse navbar-collapse\" id=\"navbarNav\">\n"
-            "<div class=\"navbar-nav\">\n"
-                "<a class=\"nav-item nav-link\" href=\"/about\">Archives</a>\n"
-                "<a class=\"nav-item nav-link\" href=\"/about\">About</a>\n"
-            "</div>\n"
-            "<div class=\"navbar-nav ml-auto\">\n";
+            "<ul class=\"navbar-nav\">\n"
+                "<li class=\"nav-item\">\n"
+                    "<a class=\"nav-link\" href=\"/about\">Archives</a>\n"
+                "</li>\n"
+                "<li class=\"nav-item\">\n"
+                    "<a class=\"nav-link\" href=\"/about\">About</a>\n"
+                "</li>\n";
 
     const string headerPart2 =
-            "</div>\n"
+            "</ul>\n"
         "</div>\n"
         "</nav>\n"
         "<div class=\"container-fluid\">\n"
@@ -87,7 +89,9 @@ TEST_F(HandlerBaseTest, buildPageHeader)
         "<!-- BEGIN PAGE CONTENT -->\n";
     unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer(
         headerPart1 +
-        "<a class=\"nav-item nav-link\" href=\"/user/login\">Login</a>\n" +
+            "<li class=\"nav-item\">\n"
+                "<a class=\"nav-link\" href=\"/user/login\">Login</a>\n"
+            "</li>\n" +
         headerPart2
     )));
 
@@ -98,11 +102,27 @@ TEST_F(HandlerBaseTest, buildPageHeader)
 
     expectVal = move(IOBuf::copyBuffer(
         headerPart1 +
-        "<a class=\"nav-item nav-link\" href=\"/edit/new\">New Article</a>\n"
-        "<a class=\"nav-item nav-link\" href=\"/edit/article\">Edit Article</a>\n"
-        "<a class=\"nav-item nav-link\" href=\"/edit/upload\">Upload Image</a>\n"
-        "<a class=\"nav-item nav-link\" href=\"/edit/viewupload\">View uploads</a>\n"
-        "<a class=\"nav-item nav-link\" href=\"/user/logout\">Logout</a>\n" +
+            "<li class=\"nav-item dropdown\">\n"
+                "<a class=\"nav-link dropdown-toggle\" href=\"#\" "
+                    "id=\"artMgtDropdown\" role=\"button\" data-toggle=\"dropdown\" "
+                    "aria-haspopup=\"true\" aria-expanded=\"false\">Article Management\n"
+                "</a>\n"
+                "<div class=\"dropdown-menu\" aria-labelledby=\"artMgtDropdown\">\n"
+                    "<a class=\"dropdown-item\" href=\"/edit/new\">New Article</a>\n"
+                    "<a class=\"dropdown-item\" href=\"/edit/article\">Edit Article</a>\n"
+                    "<a class=\"dropdown-item\" href=\"/edit/upload\">Upload Image</a>\n"
+                    "<a class=\"dropdown-item\" href=\"/edit/viewupload\">View uploads</a>\n"
+                "</div>\n"
+            "</li>\n"
+            "<li class=\"nav-item dropdown\">\n"
+                "<a class=\"nav-link dropdown-toggle\" href=\"#\" "
+                    "id=\"userDropdown\" role=\"button\" data-toggle=\"dropdown\" "
+                    "aria-haspopup=\"true\" aria-expanded=\"false\">User\n"
+                "</a>\n"
+                "<div class=\"dropdown-menu\" aria-labelledby=\"userDropdown\">\n"
+                    "<a class=\"dropdown-item\" href=\"/user/logout\">Logout</a>\n"
+                "</div>\n"
+            "</li>\n" +
         headerPart2
     ));
     obj.session.userId = 1;

@@ -111,6 +111,10 @@ private:
     std::unique_ptr<proxygen::RFC1867Codec> postParser;
     std::map<std::string, std::string> cookieJar;
 
+    const std::string generateDropdownMenu(const std::string &id,
+        const std::string &label, 
+        const std::vector<std::pair<std::string, std::string>> &items) const;
+
 protected:
     const Config &config;
     DBConn db;
