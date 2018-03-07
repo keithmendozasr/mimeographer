@@ -33,6 +33,7 @@ class UserSession
     FRIEND_TEST(UserSessionTest, initSession);
     FRIEND_TEST(UserSessionTest, hashPassword);
     FRIEND_TEST(UserSessionTest, authenticateLogin);
+    FRIEND_TEST(UserSessionTest, changeUserPassword);
 
     FRIEND_TEST(HandlerBaseTest, buildPageHeader);
 
@@ -42,8 +43,12 @@ private:
     boost::optional<int> userId;
     std::string csrfkey;
 
+    ////
+    /// Generate salted password hash
+    /// \return tuple of the salted password hash, and the hash used
+    ////
     std::tuple<std::string, std::string>
-        hashPassword(const std::string &pass, const std::string &salt = "");
+        hashPassword(const std::string &pass, std::string salt = "");
 
     inline const std::string genUUID() const
     {
@@ -110,6 +115,15 @@ public:
         db.unmapUuidToUser(uuid, *userId);
         userId = boost::none;
     }
+
+    ////
+    /// Change user's password
+    /// \param oldPass User's current password
+    /// \param newPass User's new password
+    /// \return true if oldPass authenticated, and the new password was saved
+    ////
+    bool changeUserPassword(const std::string &oldPass,
+        const std::string &newPass);
 };
 
 } // namespace

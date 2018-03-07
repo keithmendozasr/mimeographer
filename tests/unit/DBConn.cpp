@@ -92,7 +92,7 @@ TEST_F(DBConnTest, getArticle)
     });
 }
 
-TEST_F(DBConnTest, getUserInfo)
+TEST_F(DBConnTest, getUserInfo_email)
 {
     const string login = "a@a.com";
     DBConn::UserRecord testData;
@@ -110,6 +110,28 @@ TEST_F(DBConnTest, getUserInfo)
     EXPECT_FALSE(testData);
 
     EXPECT_NO_THROW({ testData = testConn.getUserInfo("off@example.com"); });
+    EXPECT_FALSE(testData);
+}
+
+TEST_F(DBConnTest, getUserInfo_userid)
+{
+    const string login = "a@a.com";
+    const int userid = 1;
+    DBConn::UserRecord testData;
+    EXPECT_NO_THROW({ testData = testConn.getUserInfo(userid); });
+    EXPECT_TRUE(testData);
+    auto data = *testData;
+
+    EXPECT_EQ(get<0>(data), 1);
+    EXPECT_STREQ(get<1>(data).c_str(), "Test user");
+    EXPECT_EQ(get<2>(data), login);
+    EXPECT_STREQ(get<3>(data).c_str(), "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+    EXPECT_STREQ(get<4>(data).c_str(), "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U");
+
+    EXPECT_NO_THROW({ testData = testConn.getUserInfo(5); });
+    EXPECT_FALSE(testData);
+
+    EXPECT_NO_THROW({ testData = testConn.getUserInfo(2); });
     EXPECT_FALSE(testData);
 }
 
@@ -139,6 +161,17 @@ TEST_F(DBConnTest, getMappedUser)
 
     EXPECT_NO_THROW({
         EXPECT_FALSE(testConn.getSessionInfo("11111111-1111-1111-1111-111111111111"));
+    });
+}
+
+TEST_F(DBConnTest, savePassword)
+{
+    EXPECT_NO_THROW({
+        testConn.savePassword(testUserId, "123456", "TESTSEED");
+        testConn.savePassword(testUserId,
+            "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U",
+            "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow"
+        );
     });
 }
 

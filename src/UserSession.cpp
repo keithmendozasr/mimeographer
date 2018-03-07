@@ -90,7 +90,7 @@ void UserSession::initSession(const std::string &uuid)
 }
 
 tuple<string,string> UserSession::hashPassword(const string &pass,
-    const string &salt)
+    string salt)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
@@ -119,24 +119,20 @@ tuple<string,string> UserSession::hashPassword(const string &pass,
         }
 
         VLOG(1) << "BASE64 encode seed";
-        useSalt = Base64::urlEncode(ByteRange(rndBuf, 32));
+        salt = Base64::urlEncode(ByteRange(rndBuf, 32));
     }
     else
-    {
         VLOG(1) << "Use existing salt";
-        useSalt = salt;
-    }
 
     VLOG(1) << "Calculate hash.";
-    VLOG(3) << "Salt to use: " << useSalt;
-    auto saltedPass = useSalt + pass;
+    auto saltedPass = salt + pass;
     unsigned char hash[32];
     OpenSSLHash::sha256(MutableByteRange(hash, 32), ByteRange((unsigned char *)saltedPass.c_str(), (size_t)saltedPass.size()));
     string hashStr = Base64::urlEncode(ByteRange(hash, 32));
     VLOG(2) << "sha256 output: " << hashStr;
     
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
-    return move(make_tuple(hashStr, useSalt));
+    return move(make_tuple(hashStr, salt));
 }
 
 const bool UserSession::authenticateLogin(const std::string &email,
@@ -217,6 +213,49 @@ const bool UserSession::verifyCSRFKey(const string &csrfkey)
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return *expectedKey == csrfkey;
+}
+
+bool UserSession::changeUserPassword(const string &oldPass,
+    const string &newPass)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    if(userId == boost::none)
+    {
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        throw invalid_argument("User ID not initialized, can't store new password");
+    }
+
+    auto userInfo = db.getUserInfo(*userId);
+    if(userInfo == boost::none)
+    {
+        LOG(WARNING) << "User info for ID " << userId << " not found";
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        return false;
+    }
+    else
+        VLOG(1) << "User info for " << *userId << " found";
+
+    auto hash = hashPassword(oldPass, get<3>(*userInfo));
+    if(get<0>(hash) != get<4>(*userInfo))
+    {
+        LOG(INFO) << "Failed to authenticate user " << userId
+            << "'s current password";
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        return false;
+    }
+    else
+        VLOG(1) << "User " << userId << "'s current password validated";
+
+    string newHash, newSalt;
+    tie(newHash, newSalt) = hashPassword(newPass);
+    VLOG(1) << "New hash: " << newHash;
+    VLOG(1) << "New salt: " << newSalt;
+
+    db.savePassword(*userId, newHash, newSalt);
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return true;
 }
 
 } // namespace

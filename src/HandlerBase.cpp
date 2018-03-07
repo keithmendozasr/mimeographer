@@ -208,7 +208,8 @@ unique_ptr<IOBuf> HandlerBase::buildPageHeader()
             generateDropdownMenu(
                 "userDropdown", "User",
                 {
-                    { "/user/logout", "Logout" }
+                    { "/user/logout", "Logout" },
+                    { "/user/changepass", "Change password" }
                 });
     }
     else

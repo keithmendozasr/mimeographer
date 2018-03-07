@@ -38,6 +38,9 @@ private:
     void processLogin();
     void processLogout();
 
+    void buildChangePassPage(const bool &showFail = false);
+    void processChangePass();
+
 public:
     UserHandler(const Config &config) : HandlerBase(config) {}
 

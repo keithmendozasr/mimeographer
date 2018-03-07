@@ -42,6 +42,19 @@ protected:
             LOG(WARNING) << "Exception encountered at " << __PRETTY_FUNCTION__;
         }
     }
+
+    void SetUp()
+    {
+        try
+        {
+            db.savePassword(1, "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U",
+                "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+        }
+        catch(...)
+        {
+            LOG(WARNING) << "Exception encountered at " << __PRETTY_FUNCTION__;
+        }
+    }
 };
 
 TEST_F(UserSessionTest, constructor)
@@ -110,6 +123,22 @@ TEST_F(UserSessionTest, userAuthenticated)
         obj.initSession(testUUID);
         EXPECT_TRUE(obj.userAuthenticated());
     }
+}
+
+TEST_F(UserSessionTest, changeUserPassword)
+{
+    UserSession obj(db);
+    EXPECT_THROW({ obj.changeUserPassword("",""); }, invalid_argument);
+
+    obj.userId = 1;
+    EXPECT_NO_THROW({
+        EXPECT_FALSE(obj.changeUserPassword("9876", "abcdef"));
+        ASSERT_TRUE(obj.changeUserPassword("123456", "abcdef"));
+    });
+
+    obj.userId = 5;
+    EXPECT_NO_THROW({ EXPECT_FALSE(obj.changeUserPassword("", "")); });
+    obj.changeUserPassword("", "123456");
 }
 
 } //namespace

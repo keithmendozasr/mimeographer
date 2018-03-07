@@ -251,6 +251,58 @@ DBConn::UserRecord DBConn::getUserInfo(const std::string &email)
     return make_tuple(userid, fullname, email, salt, password);
 }
 
+DBConn::UserRecord DBConn::getUserInfo(const int &userId)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    const static string query =
+        "SELECT email, fullname, salt, password "
+        "FROM users WHERE userid=$1 AND isactive";
+    auto dbResult = execQuery(query,
+        array<const char *, 1>({ to_string(userId).c_str() })
+    );
+    auto rsltCnt = PQntuples(dbResult.get());
+    if(rsltCnt == 0)
+    {
+        LOG(WARNING) << "No account with user ID " << userId << " found";
+        return boost::none;
+    }
+    else if(rsltCnt > 1)
+    {
+        LOG(WARNING) << "Unexpected number of records found for " << userId
+            << ": " << rsltCnt;
+        return boost::none;
+    }
+
+    UserRecord rslt;
+    
+    auto len = PQgetlength(dbResult.get(), 0, 0);
+    VLOG(3) <<  "email length: " << len;
+    string email(PQgetvalue(dbResult.get(), 0, 0), len);
+
+    len = PQgetlength(dbResult.get(), 0, 1);
+    VLOG(3) <<  "fullname length: " << len;
+    string fullname(PQgetvalue(dbResult.get(), 0, 1), len);
+
+    len = PQgetlength(dbResult.get(), 0, 2);
+    VLOG(3) <<  "salt length: " << len;
+    string salt(PQgetvalue(dbResult.get(), 0, 2), len);
+
+    len = PQgetlength(dbResult.get(), 0, 3);
+    VLOG(3) <<  "password length: " << len;
+    string password(PQgetvalue(dbResult.get(), 0, 3), len);
+
+    VLOG(3) << "Record to return:"
+        << "id: \"" << userId
+        << "\"\nfullname: \"" << fullname
+        << "\"\nemail: \"" << email
+        << "\"\nsalt: \"" << salt
+        << "\"\npassword: \"" << password << "\"";
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return make_tuple(userId, fullname, email, salt, password);
+}
+
 void DBConn::saveSession(const string &uuid)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -411,6 +463,23 @@ void DBConn::updateArticle(const int &userId, const string &title,
     );
 
     VLOG(1) << "Article " << articleId << " updated";
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
+void DBConn::savePassword(const int &userId, const std::string newPass,
+   const std::string &newSalt)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    const string query = "UPDATE users SET password = $1, salt = $2 "
+        "WHERE userid = $3";
+    execQuery(query,
+        array<const char *, 3>({
+            newPass.c_str(),
+            newSalt.c_str(),
+            to_string(userId).c_str()
+        })
+    );
+
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 

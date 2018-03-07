@@ -147,6 +147,12 @@ public:
     UserRecord getUserInfo(const std::string &email);
 
     ////
+    /// Same as getUserInfo(), except for parameter
+    /// \param userId User's ID
+    ////
+    UserRecord getUserInfo(const int &userId);
+
+    ////
     /// Save session
     /// Any errors will cause an exception
     ///
@@ -214,6 +220,15 @@ public:
     void updateArticle(const int &userId, const std::string &title,
         const std::string &preview, const std::string &markdown,
         const std::string &articleId);
+
+    ////
+    /// Update a user's password
+    /// \param userid Author's ID
+    /// \param newPasss New password hash
+    /// \param newSalt New salt
+    ////
+    void savePassword(const int &userId, const std::string newPass,
+        const std::string &newSalt);
 };
 
 }
