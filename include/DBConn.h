@@ -37,6 +37,8 @@ class DBConn
     FRIEND_TEST(DBConnTest, urlEncode);
     FRIEND_TEST(DBConnTest, constructor);
     FRIEND_TEST(DBConnTest, splitString);
+    FRIEND_TEST(DBConnTest, getUserInfo_email);
+    FRIEND_TEST(DBConnTest, getUserInfo_userid);
     
     friend class UserSessionTest;
 

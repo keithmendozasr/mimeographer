@@ -14,6 +14,10 @@ class DBConnTest : public ::testing::Test
 protected:
     const char *testUUID = "4887ebff-f59e-4881-9a90-9bf4b80f415e";
     const int testUserId = 1;
+    const char * resetUserQuery =
+        "UPDATE users SET password = 'ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U', "
+        "salt = 'VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow' WHERE userid = 1";
+
     DBConn testConn = { FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbHost,
         FLAGS_dbName };
 };
@@ -94,6 +98,9 @@ TEST_F(DBConnTest, getArticle)
 
 TEST_F(DBConnTest, getUserInfo_email)
 {
+    //Put things back to a good state before starting
+    ASSERT_NO_THROW({ testConn.execQuery(resetUserQuery); });
+
     const string login = "a@a.com";
     DBConn::UserRecord testData;
     EXPECT_NO_THROW({ testData = testConn.getUserInfo(login); });
@@ -115,6 +122,9 @@ TEST_F(DBConnTest, getUserInfo_email)
 
 TEST_F(DBConnTest, getUserInfo_userid)
 {
+    //Put things back to a good state before starting
+    ASSERT_NO_THROW({ testConn.execQuery(resetUserQuery); });
+    
     const string login = "a@a.com";
     const int userid = 1;
     DBConn::UserRecord testData;

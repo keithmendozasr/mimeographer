@@ -35,6 +35,16 @@ protected:
         config(FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName,
             FLAGS_dbPort, "/tmp", "localhost", "/tmp")
     {}
+
+    void SetUp()
+    {
+        ASSERT_NO_THROW({
+            DBConn db(config.dbUser, config.dbPass, config.dbHost, config.dbName,
+                config.dbPort);
+            db.savePassword(1, "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U",
+                "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+        });
+    }
 };
 
 TEST_F(UserHandlerTest, buildLoginPage)
