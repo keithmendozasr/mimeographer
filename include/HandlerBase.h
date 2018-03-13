@@ -111,17 +111,12 @@ private:
     std::unique_ptr<proxygen::RFC1867Codec> postParser;
     std::map<std::string, std::string> cookieJar;
 
-    const std::string generateDropdownMenu(const std::string &id,
-        const std::string &label, 
-        const std::vector<std::pair<std::string, std::string>> &items) const;
-
 protected:
     const Config &config;
     DBConn db;
     UserSession session;
 
     std::unique_ptr<folly::IOBuf> buildPageHeader();
-    std::unique_ptr<folly::IOBuf> buildPageTrailer();
     void parseCookies(const std::string &cookies) noexcept;
 
     inline void prependResponse(const std::string &data)

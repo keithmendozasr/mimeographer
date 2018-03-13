@@ -25,6 +25,7 @@
 #include "HandlerBase.h"
 #include "HandlerError.h"
 #include "HandlerRedirect.h"
+#include "SiteTemplates.h"
 
 using namespace std;
 using namespace proxygen;
@@ -136,132 +137,33 @@ void HandlerBase::PostBodyCallback::onFileEnd(bool end, uint64_t postBytesProces
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
-const std::string HandlerBase::generateDropdownMenu(const std::string &id,
-    const std::string &label, 
-    const std::vector<std::pair<std::string, std::string>> &items) const
-{
-    string retVal =
-    "<li class=\"nav-item dropdown\">\n"
-        "<a class=\"nav-link dropdown-toggle\" href=\"#\" "
-            "id=\"" + id + "\" role=\"button\" data-toggle=\"dropdown\" "
-            "aria-haspopup=\"true\" aria-expanded=\"false\">" +
-            label + "\n"
-        "</a>\n"
-        "<div class=\"dropdown-menu\" aria-labelledby=\"" + id + "\">\n";
-    for(auto i : items)
-    {
-        retVal += "<a class=\"dropdown-item\" href=\"" + i.first + "\">" +
-            i.second + "</a>\n";
-    }
-    retVal += "</div>\n</li>\n";
-
-    return move(retVal);
-}
-
 unique_ptr<IOBuf> HandlerBase::buildPageHeader() 
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
-    string templateHeader = 
-        "<!doctype html>\n"
-        "<html lang=\"en\">\n"
-        "<head>\n"
-        "<title>Mimeographer</title>\n"
-        "<meta charset=\"utf-8\">\n"
-        "<meta name=\"viewport\" content=\"width=device-width, "
-            "initial-scale=1, shrink-to-fit=no\">\n"
-        "<link rel=\"stylesheet\" "
-            "href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css\" "
-            "integrity=\"sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb\" "
-            "crossorigin=\"anonymous\">\n"
-        "</head>\n"
-        "<body>\n"
-
-        // Navbar
-        "<nav class=\"navbar navbar-expand-lg navbar-expand-xl navbar-dark bg-dark\">\n"
-        "<a class=\"navbar-brand\" href=\"/\">Mimeographer</a>\n"
-        "<button class=\"navbar-toggler\" type=\"button\" "
-            "data-toggle=\"collapse\" data-target=\"#navbarNav\" "
-            "aria-controls=\"navbarNav\" aria-expanded=\"false\" "
-            "aria-label=\"Toggle navigation\">\n"
-        "<span class=\"navbar-toggler-icon\"></span></button>\n"
-        "<div class=\"collapse navbar-collapse\" id=\"navbarNav\">\n"
-            "<ul class=\"navbar-nav\">\n"
-                "<li class=\"nav-item\">\n"
-                    "<a class=\"nav-link\" href=\"/about\">Archives</a>\n"
-                "</li>\n"
-                "<li class=\"nav-item\">\n"
-                    "<a class=\"nav-link\" href=\"/about\">About</a>\n"
-                "</li>\n";
+    string templateHeader = SiteTemplates::getTemplate("header") + 
+        SiteTemplates::getTemplate("navbase");
 
     if(session.userAuthenticated())
     {
         VLOG(1) << "User authenticated, add editor menu items";
-        templateHeader += generateDropdownMenu(
-            "artMgtDropdown", "Article Management",
-            {
-                { "/edit/new", "New Article" },
-                { "/edit/article", "Edit Article" },
-                { "/edit/upload", "Upload Image" },
-                { "/edit/viewupload", "View uploads" }
-            }) + 
-            generateDropdownMenu(
-                "userDropdown", "User",
-                {
-                    { "/user/logout", "Logout" },
-                    { "/user/changepass", "Change password" }
-                });
+        templateHeader +=
+            SiteTemplates::getTemplate("editnav") + 
+            SiteTemplates::getTemplate("usernav");
     }
     else
     {
         VLOG(1) << "User not authenticated";
-        templateHeader +=
-                "<li class=\"nav-item\">\n"
-                    "<a class=\"nav-link\" href=\"/user/login\">Login</a>\n"
-                "</li>\n";
+        templateHeader += SiteTemplates::getTemplate("login");
     }
 
-    templateHeader +=
-            "</ul>\n"
-        "</div>\n"
-        "</nav>\n"
-
-        // Opening display container
-        "<div class=\"container-fluid\">\n"
-        "<div class=\"row\">\n" // Main page row
-        "<div class=\"col col-10 offset-1\">\n" // Main page column
-        "<!-- BEGIN PAGE CONTENT -->\n";
+    templateHeader += SiteTemplates::getTemplate("navclose") +
+        SiteTemplates::getTemplate("contentopen");
 
     // NOTE: Any other sections of the page should be its own IOBuf and
     // appended to response outside of this section
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(IOBuf::copyBuffer(templateHeader));
-}
-
-unique_ptr<IOBuf> HandlerBase::buildPageTrailer() 
-{
-    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
-
-    // NOTE: This section is intended to close out the page itself. 
-    static const string templateTail = 
-        "<!-- END PAGE CONTENT -->\n"
-        "</div>\n" // Closing main page column
-        "</div>\n" // Closing main page row
-        "</div>\n" //Closing main container
-        "<script src=\"https://code.jquery.com/jquery-3.2.1.slim.min.js\" "
-            "integrity=\"sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN\" "
-            "crossorigin=\"anonymous\"></script>\n"
-        "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js\" "
-            "integrity=\"sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh\" "
-            "crossorigin=\"anonymous\"></script>\n"
-        "<script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js\" "
-            "integrity=\"sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ\" "
-            "crossorigin=\"anonymous\"></script>\n"
-        "</body>\n"
-        "</html>";
-
-    VLOG(2) << "End " << __PRETTY_FUNCTION__;
-    return move(IOBuf::copyBuffer(templateTail));
 }
 
 void HandlerBase::parseCookies(const string &cookies) noexcept
@@ -406,7 +308,11 @@ void HandlerBase::onEOM() noexcept
         auto response = buildPageHeader();
         if(handlerResponse)
             response->prependChain(move(handlerResponse));
-        response->prependChain(buildPageTrailer());
+
+        response->prependChain(
+            move(IOBuf::copyBuffer(
+                SiteTemplates::getTemplate("contentclose")
+        )));
 
         // Send the response that everything worked out well
         builder.status(200, "OK")
@@ -451,7 +357,9 @@ void HandlerBase::onEOM() noexcept
         ostringstream msg;
         msg << "<p>" << err.what() << "</p>";
         response->prependChain(IOBuf::copyBuffer(msg.str()));
-        response->prependChain(buildPageTrailer());
+        response->prependChain(
+            IOBuf::copyBuffer(SiteTemplates::getTemplate("contentclose"))
+        );
 
         VLOG(1) << "Send response";
         builder.status(err.getCode(), err.what())
@@ -467,7 +375,9 @@ void HandlerBase::onEOM() noexcept
 
         auto response = buildPageHeader();
         response->prependChain(IOBuf::copyBuffer("<p>Something went really wrong</p>"));
-        response->prependChain(buildPageTrailer());
+        response->prependChain(
+            IOBuf::copyBuffer(SiteTemplates::getTemplate("contentclose"))
+        );
 
         VLOG(1) << "Send response";
         builder.status(500, "Internal error")

@@ -23,9 +23,11 @@
 
 #include "StaticHandler.h"
 #include "HandlerError.h"
+#include "SiteTemplates.h"
 
 using namespace std;
 using namespace proxygen;
+using namespace folly;
 
 namespace mimeographer {
 
@@ -179,7 +181,9 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         auto response = buildPageHeader();
         string msg("<p>File not found</p>");
         response->prependChain(folly::IOBuf::copyBuffer(msg));
-        response->prependChain(buildPageTrailer());
+        response->prependChain(
+            IOBuf::copyBuffer(SiteTemplates::getTemplate("contentclose"))
+        );
 
         ResponseBuilder(downstream_)
             .status(404, "Not Found")
@@ -194,7 +198,9 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         ostringstream msg;
         msg << "<p>" << err.what() << "</p>";
         response->prependChain(folly::IOBuf::copyBuffer(msg.str()));
-        response->prependChain(buildPageTrailer());
+        response->prependChain(
+            IOBuf::copyBuffer(SiteTemplates::getTemplate("contentclose"))
+        );
 
         ResponseBuilder(downstream_)
             .status(err.getCode(), err.what())

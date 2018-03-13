@@ -25,6 +25,7 @@
 #include "EditHandler.h"
 #include "StaticHandler.h"
 #include "UserHandler.h"
+#include "SiteTemplates.h"
 
 using namespace mimeographer;
 using namespace proxygen;
@@ -111,12 +112,28 @@ int main(int argc, char* argv[])
 {
     folly::init(&argc, &argv, true);
 
+    //folly::init calls google log init stuff for us
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
 
     VLOG(3) << "Value of cmark_version: " << cmark_version();
     if(cmark_version() < ((0<<16) | (28 << 8) | 0)) 
         LOG(WARNING) << "cmark version is " << cmark_version_string()
             << ". Your milage may vary.";
+
+    Config config(
+        FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName, FLAGS_dbPort,
+        FLAGS_uploadDest, FLAGS_hostName, FLAGS_staticBase
+    );
+
+    try
+    {
+        SiteTemplates::init(config);
+    }
+    catch(...)
+    {
+        LOG(FATAL) << "Error encountered loading site templates";
+    }
 
     wangle::SSLContextConfig sslConfig;
     sslConfig.isDefault = true;
@@ -136,10 +153,6 @@ int main(int argc, char* argv[])
         CHECK_GT(FLAGS_threads, 0);
     }
 
-    Config config(
-        FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName, FLAGS_dbPort,
-        FLAGS_uploadDest, FLAGS_hostName, FLAGS_staticBase
-    );
 
     HTTPServerOptions options;
     options.threads = static_cast<size_t>(FLAGS_threads);
