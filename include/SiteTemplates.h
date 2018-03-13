@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Keith Mendoza
+ * Copyright 2017-present Keith Mendoza
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
-#include <gflags/gflags.h>
+#include <exception>
+#include <map>
+#include <string>
 
-DECLARE_string(dbHost);
-DECLARE_string(dbUser);
-DECLARE_string(dbPass);
-DECLARE_string(dbName);
-DECLARE_int32(dbPort);
-DECLARE_string(staticBase);
+#include "gtest/gtest_prod.h"
+
+#include "Config.h"
+
+namespace mimeographer
+{
+
+class SiteTemplates
+{
+    FRIEND_TEST(SiteTemplatesTest, init);
+
+private:
+    static std::map<std::string, std::string> templateItems;
+
+public:
+    static void init(const Config &config);
+
+    static const std::string &getTemplate(const std::string &name);
+};
+
+}

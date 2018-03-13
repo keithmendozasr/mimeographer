@@ -7,6 +7,7 @@ DEFINE_string(dbUser, "", "DB login");
 DEFINE_string(dbPass, "", "DB password");
 DEFINE_string(dbName, "mimeographer", "Database name");
 DEFINE_int32(dbPort, 5432, "DB server port");
+DEFINE_string(staticBase, "", "Location of static files");
 
 int main(int argc, char **argv)
 {
