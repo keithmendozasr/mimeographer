@@ -187,6 +187,8 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
 
         ResponseBuilder(downstream_)
             .status(404, "Not Found")
+            .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
+            .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
             .body(move(response))
             .sendWithEOM();
         return;
@@ -205,6 +207,7 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         ResponseBuilder(downstream_)
             .status(err.getCode(), err.what())
             .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
+            .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
             .body(move(response))
             .sendWithEOM();
 
@@ -214,6 +217,12 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
 
     ResponseBuilder(downstream_)
         .status(200, "Ok")
+        .header(HTTP_HEADER_CONTENT_TYPE, "application/octet-stream") //For now
+        .header(HTTP_HEADER_X_FRAME_OPTIONS, "DENY")
+        .header(HTTP_HEADER_X_CONTENT_TYPE_OPTIONS, "nosniff")
+        .header(HTTP_HEADER_CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+        .header(HTTP_HEADER_PRAGMA, "no-cache")
+        .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
         .send();
 
     // use a CPU executor since read(2) of a file can block

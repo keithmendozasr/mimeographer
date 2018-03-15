@@ -316,14 +316,20 @@ void HandlerBase::onEOM() noexcept
 
         // Send the response that everything worked out well
         builder.status(200, "OK")
-            .header(HTTP_HEADER_CONTENT_TYPE, "text/html");
+            .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
+            .header(HTTP_HEADER_X_FRAME_OPTIONS, "DENY")
+            .header(HTTP_HEADER_X_CONTENT_TYPE_OPTIONS, "nosniff")
+            .header(HTTP_HEADER_PRAGMA, "no-cache")
+            .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
+            .header(HTTP_HEADER_CACHE_CONTROL, "no-cache, no-store, must-revalidate");
 
         VLOG(1) << "Send cookies";
         for(auto i : cookieJar)
         {
             VLOG(3) << "Add cookie " << i.first << "=" << i.second;
             string cookie = i.first + "=" + i.second
-                + "; HttpOnly; Path=/; Domain=" + config.hostName;
+                + "; Secure; HttpOnly; Path=/; Domain=" + config.hostName;
+            VLOG(3) << "Cookie string: " << cookie;
             builder.header(HTTP_HEADER_SET_COOKIE, cookie);
         }
         
@@ -341,12 +347,14 @@ void HandlerBase::onEOM() noexcept
         {
             VLOG(3) << "Add cookie " << i.first << "=" << i.second;
             string cookie = i.first + "=" + i.second
-                + "; HttpOnly; Path=/; Domain=" + config.hostName;
+                + "; Secure; HttpOnly; Path=/; Domain=" + config.hostName;
+            VLOG(3) << "Cookie string: " << cookie;
             builder.header(HTTP_HEADER_SET_COOKIE, cookie);
         }
             
         VLOG(1) << "Send redirect header";
         builder.header(HTTP_HEADER_LOCATION, e.getLocation())
+            .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
             .sendWithEOM();
     }
     catch (const HandlerError &err)
@@ -364,6 +372,7 @@ void HandlerBase::onEOM() noexcept
         VLOG(1) << "Send response";
         builder.status(err.getCode(), err.what())
             .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
+            .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
             .body(move(response))
             .sendWithEOM();
     }
@@ -382,6 +391,7 @@ void HandlerBase::onEOM() noexcept
         VLOG(1) << "Send response";
         builder.status(500, "Internal error")
             .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
+            .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
             .body(move(response))
             .sendWithEOM();
     }

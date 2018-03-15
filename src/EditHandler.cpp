@@ -115,7 +115,7 @@ void EditHandler::processSaveArticle()
     if(!param || param->type != PostParamType::VALUE ||
         !session.verifyCSRFKey(param->value))
     {
-        LOG(WARNING) << "CSRF mismatch. CSRF provided: " << param->value;
+        LOG(WARNING) << "CSRF mismatch. CSRF provided: " << (param ? param->value : "");
         throw HandlerError(401, "Unauthorized");
     }
     VLOG(1) << "CSRF key validated";
@@ -272,7 +272,7 @@ void EditHandler::processUpload()
         if(!param || param->type != PostParamType::VALUE ||
             !session.verifyCSRFKey(param->value))
         {
-            LOG(WARNING) << "CSRF mismatch. CSRF provided: " << param->value;
+            LOG(WARNING) << "CSRF mismatch. CSRF provided: " << (param ? param->value : ""); 
             VLOG(2) << "End " << __PRETTY_FUNCTION__;
             throw HandlerError(401, "Unauthorized");
         }
