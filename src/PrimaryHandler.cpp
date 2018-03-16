@@ -86,7 +86,7 @@ void PrimaryHandler::renderArticle(const string &data)
             }
     ));
 
-    bool inItem;
+    bool inItem = false;
     string body;
     cmark_event_type evType;
     while((evType = cmark_iter_next(iterator.get())) != CMARK_EVENT_DONE)
