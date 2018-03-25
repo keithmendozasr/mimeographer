@@ -56,7 +56,7 @@ void SiteTemplates::init(const Config &config)
         {
             int err = errno;
             ostringstream msg;
-            msg << "Failed to open " << i <<" template file. Cause: "
+            msg << "Failed to open " << fileName <<" template file. Cause: "
                 << strerror(err);
             LOG(ERROR) << msg.str();
             throw runtime_error(msg.str());
