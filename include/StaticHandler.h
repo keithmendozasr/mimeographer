@@ -38,6 +38,8 @@ private:
     bool checkForCompletion();
     std::string parsePath(const std::string &path);
 
+    std::string findMimeType(const std::string &fileName);
+
 public:
     StaticHandler(const Config &config) : HandlerBase(config) {}
     void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override {}

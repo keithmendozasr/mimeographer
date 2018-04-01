@@ -153,6 +153,7 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
     }
     addCookie("session", session.getUUID());
 
+    string contentType;
     try
     {
         static regex parser("/static/(.+)");
@@ -164,9 +165,13 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
             fileName = config.staticBase + "/" + match[1].str();
             VLOG(3) << "Local fileName: " << fileName;
             file_ = std::make_unique<folly::File>(fileName.c_str());
+            contentType = findMimeType(fileName);
         }
         else if(path == "/favicon.ico")
+        {
+            contentType = "image/x-icon";
             file_ = std::make_unique<folly::File>(config.staticBase + "/favicon.ico");
+        }
         else
         {
             LOG(WARNING) << "File path not handled";
@@ -217,7 +222,7 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
 
     ResponseBuilder(downstream_)
         .status(200, "Ok")
-        .header(HTTP_HEADER_CONTENT_TYPE, "application/octet-stream") //For now
+        .header(HTTP_HEADER_CONTENT_TYPE, contentType)
         .header(HTTP_HEADER_X_FRAME_OPTIONS, "DENY")
         .header(HTTP_HEADER_X_CONTENT_TYPE_OPTIONS, "nosniff")
         .header(HTTP_HEADER_CACHE_CONTROL, "no-cache, no-store, must-revalidate")
@@ -328,6 +333,53 @@ string StaticHandler::parsePath(const string &path)
     VLOG(3) << "Value to return: " << retVal;
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
     return move(retVal);
+}
+
+string StaticHandler::findMimeType(const string &fileName)
+{
+    static map<string, string> mimeMap = {
+        { "bmp", "image/bmp" },
+        { "cod", "image/cis-cod" },
+        { "gif", "image/gif" },
+        { "ief", "image/ief" },
+        { "jpe", "image/jpeg" },
+        { "jpeg", "image/jpeg" },
+        { "jpg", "image/jpeg" },
+        { "jfif", "image/pipeg" },
+        { "svg", "image/svg+xml" },
+        { "tif", "image/tiff" },
+        { "tiff", "image/tiff" },
+        { "ras", "image/x-cmu-raster" },
+        { "cmx", "image/x-cmx" },
+        { "ico", "image/x-icon" },
+        { "pnm", "image/x-portable-anymap" },
+        { "pbm", "image/x-portable-bitmap" },
+        { "pgm", "image/x-portable-graymap" },
+        { "ppm", "image/x-portable-pixmap" },
+        { "rgb", "image/x-rgb" },
+        { "xbm", "image/x-xbitmap" },
+        { "xpm", "image/x-xpixmap" },
+        { "xwd", "image/x-xwindowdump" }
+    };
+
+    auto dotPos = fileName.rfind(".");
+    VLOG(3) << "Value of dotPos: " << dotPos;
+    auto extension = fileName.substr(dotPos+1);
+    VLOG(3) << "Value of extension: " << extension;
+    string retVal;
+    try
+    {
+        retVal = mimeMap.at(extension);
+        VLOG(1) << "Mime type found for " << extension;
+    }
+    catch(out_of_range &e)
+    {
+        VLOG(1) << "No mime type for " << extension;
+        retVal = "application/octet-stream";
+    }
+
+    VLOG(3) << "Mime type to return: " << retVal;
+    return retVal;
 }
 
 void StaticHandler::onError(ProxygenError /*err*/) noexcept
