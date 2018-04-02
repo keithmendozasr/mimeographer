@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 3.7)
 project (mimeographer)
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -43,3 +44,4 @@ endif()
 include_directories(include ${CMAKE_BINARY_DIR}/googletest-src/googletest/include)
 add_subdirectory (src)
 add_subdirectory (tests)
+
