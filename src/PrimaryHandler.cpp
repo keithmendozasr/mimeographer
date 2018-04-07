@@ -152,7 +152,7 @@ void PrimaryHandler::renderArticle(const string &data)
                 break;
             case CMARK_NODE_IMAGE:
                 VLOG(1) << "Begin 1st part of image tag";
-                chunk << "<img class=\"img-fluid\" "
+                chunk << "<img class=\"mx-auto d-block\" "
                     << "src=\"" << cmark_node_get_url(node) << "\"";
                 {
                     string title = cmark_node_get_title(node);
