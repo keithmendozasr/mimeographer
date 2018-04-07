@@ -45,12 +45,12 @@ DEFINE_string(dbUser, "", "DB login");
 DEFINE_string(dbPass, "", "DB password");
 DEFINE_string(dbName, "mimeographer", "Database name");
 DEFINE_int32(dbPort, 5432, "DB server port");
-DEFINE_string(staticBase, "/tmp", "Location of static files");
+DEFINE_string(staticBase, "/var/lib/mimeographer", "Location of static files");
 DEFINE_string(uploadDest, "uploads", "Folder to save uploaded files to. "
     "Folder must be inside staticBase");
 DEFINE_string(hostName, "localhost", "Hostname mimeograph will use");
-DEFINE_string(sslcert, "", "SSL Certificate");
-DEFINE_string(sslkey, "", "SSL Private key");
+DEFINE_string(sslcert, "/etc/mimeographer/mimeographer.pem", "SSL Certificate");
+DEFINE_string(sslkey, "/etc/mimeographer/mimeographer.priv.pem", "SSL Private key");
 
 namespace mimeographer 
 {
