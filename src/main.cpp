@@ -46,8 +46,7 @@ DEFINE_string(dbPass, "", "DB password");
 DEFINE_string(dbName, "mimeographer", "Database name");
 DEFINE_int32(dbPort, 5432, "DB server port");
 DEFINE_string(staticBase, "/var/lib/mimeographer", "Location of static files");
-DEFINE_string(uploadDest, "uploads", "Folder to save uploaded files to. "
-    "Folder must be inside staticBase");
+DEFINE_string(uploadDest, "/var/lib/mimeographer/uploads", "Folder to save uploaded files to.");
 DEFINE_string(hostName, "localhost", "Hostname mimeograph will use");
 DEFINE_string(sslcert, "/etc/mimeographer/mimeographer.pem", "SSL Certificate");
 DEFINE_string(sslkey, "/etc/mimeographer/mimeographer.priv.pem", "SSL Private key");
@@ -84,7 +83,8 @@ public:
             LOG(INFO) << "Processing edit";
             ptr = new EditHandler(config);
         }
-        else if(message->getPath().substr(0, 7) == "/static" ||
+        else if(message->getPath().substr(0, 8) == "/static/" ||
+            message->getPath().substr(0,9) == "/uploads/" ||
             message->getPath() == "/favicon.ico")
         {
             LOG(INFO) << "Processing static file";

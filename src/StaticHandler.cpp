@@ -156,13 +156,25 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
     string contentType;
     try
     {
-        static regex parser("/static/(.+)");
+        static regex parser("/(static|uploads)/(.+)");
         smatch match;
         string path = parsePath(headers->getPath());
         VLOG(3) << "Static file path: " << path;
         if(regex_match(path, match, parser))
         {
-            fileName = config.staticBase + "/" + match[1].str();
+            auto dir = match[1].str();
+            VLOG(3) << "Value of dir: " << dir;
+            if(dir == "static")
+                fileName = config.staticBase;
+            else if(dir == "uploads")
+                fileName = config.uploadDest;
+            else
+            {
+                LOG(ERROR) << "Unexpected dir '" << dir << "'";
+                throw HandlerError(500, "Internal Server Error");
+            }
+
+            fileName += "/" + match[2].str();
             VLOG(3) << "Local fileName: " << fileName;
             file_ = std::make_unique<folly::File>(fileName.c_str());
             contentType = findMimeType(fileName);

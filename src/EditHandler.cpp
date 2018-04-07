@@ -286,11 +286,11 @@ void EditHandler::processUpload()
             throw HandlerError(400, "Bad Request");
         }
 
-        string::size_type baseLen = config.staticBase.size() -
-            (*(config.staticBase.end()-1) == '/' ? 1 : 0);
+        string::size_type baseLen = config.uploadDest.size() -
+            (*(config.uploadDest.end()-1) == '/' ? 1 : 0);
         VLOG(3) << "Value of baseLen: " << baseLen;
         string displayPath = param->localFilename;
-        displayPath.replace(0, baseLen, "/static");
+        displayPath.replace(0, baseLen, "/uploads");
         string body = "<p>File uploaded and saved as " + displayPath + "</p>";
         prependResponse(body);
     }
@@ -311,7 +311,7 @@ void EditHandler::processViewUpload()
     prependResponse(body);
     try
     {
-        string uploadDir = config.staticBase + '/' + config.uploadDest;
+        string uploadDir = config.uploadDest + '/';
         path p(uploadDir);
         if(exists(p))
         {
@@ -330,9 +330,7 @@ void EditHandler::processViewUpload()
                 body = "";
                 for(auto && x : fileList)
                 {
-                    auto displayPath = "/static/" + config.uploadDest
-                        + (*(config.uploadDest.end()-1) != '/' ? "/" : "")
-                        + x;
+                    auto displayPath = "/static/uploads/" + x;
                     body += "<div class=\"row mb-3\">\n"
                         "<div class=\"col-8\">"
                             "<img class=\"img-fluid\" src=\""
