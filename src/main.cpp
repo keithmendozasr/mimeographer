@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 #include <iomanip>
+#include <fstream>
+#include <cerrno>
+#include <cstring>
 
 #include <folly/init/Init.h>
 #include <proxygen/httpserver/HTTPServer.h>
 #include <proxygen/httpserver/RequestHandlerFactory.h>
 
 #include <cmark.h>
+#include <jsoncpp/json/json.h>
 
 #include "PrimaryHandler.h"
 #include "EditHandler.h"
@@ -27,6 +31,7 @@
 #include "UserHandler.h"
 #include "SiteTemplates.h"
 
+using namespace std;
 using namespace mimeographer;
 using namespace proxygen;
 
@@ -36,20 +41,9 @@ using folly::SocketAddress;
 
 using Protocol = HTTPServer::Protocol;
 
-DEFINE_int32(http_port, 11000, "Port to listen on with HTTP protocol");
-DEFINE_string(ip, "localhost", "IP/Hostname to bind to");
 DEFINE_int32(threads, 0, "Number of threads to listen on. Numbers <= 0 "
              "will use the number of cores on this machine.");
-DEFINE_string(dbHost, "localhost", "DB server host");
-DEFINE_string(dbUser, "", "DB login");
-DEFINE_string(dbPass, "", "DB password");
-DEFINE_string(dbName, "mimeographer", "Database name");
-DEFINE_int32(dbPort, 5432, "DB server port");
-DEFINE_string(staticBase, "/var/lib/mimeographer", "Location of static files");
-DEFINE_string(uploadDest, "/var/lib/mimeographer/uploads", "Folder to save uploaded files to.");
-DEFINE_string(hostName, "localhost", "Hostname mimeograph will use");
-DEFINE_string(sslcert, "/etc/mimeographer/mimeographer.pem", "SSL Certificate");
-DEFINE_string(sslkey, "/etc/mimeographer/mimeographer.priv.pem", "SSL Private key");
+DEFINE_string(config, "/etc/mimeographer/mimeographer.cfg", "Configuration file");
 
 namespace mimeographer 
 {
@@ -121,10 +115,46 @@ int main(int argc, char* argv[])
         LOG(WARNING) << "cmark version is " << cmark_version_string()
             << ". Your milage may vary.";
 
+    Json::Value cfgRoot;
+
+    {
+        //Scope ifstream for auto close when done
+        ifstream f(FLAGS_config, ifstream::binary);
+        if(!f.is_open())
+        {
+            int err = errno;
+            LOG(FATAL) << "Failed to open configuration file at " << FLAGS_config
+                << " Cause: " << strerror(err);
+        }
+
+        VLOG(2) << "Config file open. Feed it to parser";
+
+        Json::CharReaderBuilder b;
+        JSONCPP_STRING errMsg;
+        if(!Json::parseFromStream(b, f, &cfgRoot, &errMsg))
+        {
+            LOG(FATAL) << "Failed to parse configuration file at " << FLAGS_config
+                << " Cause: " << errMsg;
+        }
+    }
+
     Config config(
-        FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName, FLAGS_dbPort,
-        FLAGS_uploadDest, FLAGS_hostName, FLAGS_staticBase
+        cfgRoot.get("dbHost", "localhost").asString(),
+        cfgRoot.get("dbUser", "").asString(),
+        cfgRoot.get("dbPass", "").asString(),
+        cfgRoot.get("dbName", "mimeographer").asString(),
+        cfgRoot.get("dbPort", 5432).asInt(),
+        cfgRoot.get("uploadDest", "/var/lib/mimeographer/uploads").asString(),
+        cfgRoot.get("hostName", "localhost").asString(),
+        cfgRoot.get("staticBase", "/var/lib/mimeographer").asString()
     );
+
+    auto sslCert = cfgRoot.get("sslcert", "/etc/mimeographer/mimeographer.pem").
+        asString();
+    auto sslKey = cfgRoot.get("sslkey", "/etc/mimeographer/mimeographer.priv.pem").
+        asString();
+    auto ip = cfgRoot.get("ip", "localhost").asString();
+    auto httpPort = cfgRoot.get("http_port", 11000).asInt();
 
     try
     {
@@ -137,10 +167,10 @@ int main(int argc, char* argv[])
 
     wangle::SSLContextConfig sslConfig;
     sslConfig.isDefault = true;
-    sslConfig.setCertificate(FLAGS_sslcert, FLAGS_sslkey, "");
+    sslConfig.setCertificate(sslCert, sslKey, "");
 
     HTTPServer::IPConfig ipConfig(
-        SocketAddress(FLAGS_ip, FLAGS_http_port, true), Protocol::HTTP
+        SocketAddress(ip, httpPort, true), Protocol::HTTP
     );
     ipConfig.sslConfigs.push_back(sslConfig);
 
