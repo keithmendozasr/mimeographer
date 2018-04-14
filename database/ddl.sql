@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS permissions (
     isactive BOOL DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS extra_user_permissions (
+CREATE TABLE IF NOT EXISTS user_permissions (
     userid INT NOT NULL REFERENCES users(userid),
     permission SMALLINT NOT NULL REFERENCES permissions(permissionid)
         ON UPDATE CASCADE ON DELETE CASCADE,
