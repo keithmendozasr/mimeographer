@@ -140,9 +140,9 @@ TEST_F(PrimaryHandlerTest, renderArticle_image)
     IOBufEqual isEq;    
     PrimaryHandler obj(config);
     unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer(
-        "<p><img class=\"img-fluid\" src=\"pic1.png\" alt=\"\" /> "
-        "<img class=\"img-fluid\" src=\"pic2.png\" alt=\"blah\" /> "
-        "<img class=\"img-fluid\" src=\"pic3.png\" title=\"title\" alt=\"blah\" /></p>\n"
+        "<p><img class=\"mx-auto d-block\" src=\"pic1.png\" alt=\"\" /> "
+        "<img class=\"mx-auto d-block\" src=\"pic2.png\" alt=\"blah\" /> "
+        "<img class=\"mx-auto d-block\" src=\"pic3.png\" title=\"title\" alt=\"blah\" /></p>\n"
     )));
 
 	obj.renderArticle(
