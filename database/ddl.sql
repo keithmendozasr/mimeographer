@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS article (
     savedate TIMESTAMP NOT NULL DEFAULT NOW(),
     summary VARCHAR(256) NOT NULL
 );
+CREATE INDEX arcticle_publish_date ON article(publishdate);
 
 CREATE TABLE IF NOT EXISTS comments (
     id INT NOT NULL PRIMARY KEY,

@@ -149,7 +149,7 @@ DBConn::headline DBConn::getHeadlines() const
     const static string query =
         "SELECT articleid, title, preview"
         " FROM article WHERE publishdate <= NOW()"
-        " ORDER BY publishdate";
+        " ORDER BY publishdate DESC";
     auto dbResult = execQuery(query);
     VLOG(1) << "Article query OK";
 
@@ -481,6 +481,26 @@ void DBConn::savePassword(const int &userId, const std::string newPass,
     );
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
+const string DBConn::getLatestArticle() const
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    const static string query = "SELECT content FROM article "
+        "ORDER BY publishdate DESC LIMIT 1";
+    auto dbResult = execQuery(query);
+
+    VLOG(3) << "Number of articles: " << PQntuples(dbResult.get());
+    string content = "";
+    if(PQntuples(dbResult.get()) == 1)
+    {
+        auto len = PQgetlength(dbResult.get(), 0, 0);
+        VLOG(3) << "Content length: " << len;
+        content = string(PQgetvalue(dbResult.get(), 0,0), len);
+    }
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return move(content);
 }
 
 } // namespace

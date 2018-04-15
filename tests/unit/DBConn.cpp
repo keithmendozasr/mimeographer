@@ -185,4 +185,12 @@ TEST_F(DBConnTest, savePassword)
     });
 }
 
+TEST_F(DBConnTest, getLatestArticle)
+{
+    EXPECT_NO_THROW({
+        auto val = testConn.getLatestArticle();
+        EXPECT_EQ("# Test 1", val.substr(0,8));
+    });
+}
+
 } //namespace mimeographer

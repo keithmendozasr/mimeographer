@@ -231,6 +231,11 @@ public:
     ////
     void savePassword(const int &userId, const std::string newPass,
         const std::string &newSalt);
+
+    ////
+    /// Get the latest article
+    ////
+    const std::string getLatestArticle() const;
 };
 
 }

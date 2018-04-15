@@ -39,22 +39,30 @@ protected:
 TEST_F(PrimaryHandlerTest, buildFrontPage)
 {
     unique_ptr<IOBuf> expectVal(move(IOBuf::copyBuffer(
-        "<h1><a href=\"/article/1\">Test 1</a></h1>\n"
-        "<div class=\"col col-12\" >Lorem ipsum dolor sit amet, consectetur adi"
-            "piscing elit. Morbi interdum enim ex, eget hendrerit neque fringil"
-            "la at. Aenean dapibus leo et ligula sodales tincidunt. Nam sit ame"
-            "t mi vulputate, suscipit mi laoreet, tincidunt tortor. Pellentesqu"
-            "e euismod amet.\n"
-        "</div>\n"
-        "<h1><a href=\"/article/2\">Test 2</a></h1>\n"
-        "<div class=\"col col-12\" >Start of 1st paragraph\n"
-        "</div>\n"
+        "<h1>Test 1</h1>\n"
+            "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla "
+            "auctor neque eget lobortis mollis. Morbi tempus eu felis eu auctor"
+			". Vestibulum ante ipsum primis in faucibus orci luctus et ultrices"
+			" posuere cubilia Curae; Cras tristique tincidunt arcu, eget dictum"
+			" sapien interdum eget. Donec iaculis dapibus magna, nec vulputate "
+			"ipsum molestie quis. Proin egestas dui non ante scelerisque feugia"
+			"t. Vestibulum tempor, turpis vitae porttitor condimentum, sapien q"
+			"uam rutrum erat, ut auctor dolor mi ac erat. Nullam aliquet ante r"
+			"isus, sit amet convallis sapien ullamcorper vitae. Ut aliquet id t"
+			"ortor sed suscipit. Pellentesque rutrum leo a neque congue, id lac"
+			"inia libero finibus. Fusce eleifend venenatis vulputate. Vestibulu"
+			"m vitae mauris a ex pretium posuere id ac dui. Quisque neque dolor"
+			", gravida vel neque non, consequat imperdiet nunc. Fusce finibus, "
+			"enim sed rutrum interdum, felis lorem tristique dolor, quis pulvin"
+			"ar orci libero ut nisl. In hac habitasse platea dictumst. Nullam t"
+			"empus vestibulum nisi eget cras amet.</p>\n"
     )));
 
     PrimaryHandler obj(config);
     obj.buildFrontPage();
     IOBufEqual isEq;
-    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse));
+    EXPECT_TRUE(isEq(expectVal, obj.handlerResponse))
+        << "handlerResponse value: " << obj.handlerResponse->data();
 }
 
 TEST_F(PrimaryHandlerTest, renderArticle_header)

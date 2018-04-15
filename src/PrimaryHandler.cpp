@@ -33,37 +33,6 @@ using namespace folly;
 namespace mimeographer 
 {
 
-void PrimaryHandler::buildFrontPage()
-{
-    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
-
-    VLOG(1) << "DB connection established";
-    string data;
-    for(auto article : db.getHeadlines())
-    {
-        ostringstream line;
-        line << "<h1><a href=\"/article/" << get<0>(article) << + "\">"
-            << get<1>(article) << "</a></h1>\n<div class=\"col col-12\" >"
-            << get<2>(article) << "\n</div>\n";
-
-        if((data.capacity() - data.size() - line.str().size()) < 0)
-        {
-            VLOG(2) << "Loading existing list to buffer";
-            prependResponse(data);
-            data = line.str();
-        }
-        else
-        {
-            VLOG(2) << "Append line to data buffer";
-            data = data + line.str();
-        }
-    }
-    prependResponse(data);
-    VLOG(1) << "Front page data processed";
-
-    VLOG(2) << "End " << __PRETTY_FUNCTION__;
-}
-
 void PrimaryHandler::renderArticle(const string &data)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -298,6 +267,43 @@ void PrimaryHandler::renderArticle(const string &data)
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
+void PrimaryHandler::buildFrontPage()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    renderArticle(db.getLatestArticle());
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
+void PrimaryHandler::buildArchive()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    string data;
+    for(auto article : db.getHeadlines())
+    {
+        ostringstream line;
+        line << "<h1><a href=\"/article/" << get<0>(article) << + "\">"
+            << get<1>(article) << "</a></h1>\n<div class=\"col col-12\" >"
+            << get<2>(article) << "\n</div>\n";
+
+        if((data.capacity() - data.size() - line.str().size()) < 0)
+        {
+            VLOG(2) << "Loading existing list to buffer";
+            prependResponse(data);
+            data = line.str();
+        }
+        else
+        {
+            VLOG(2) << "Append line to data buffer";
+            data = data + line.str();
+        }
+    }
+    prependResponse(data);
+    VLOG(1) << "Archive page processed";
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
 void PrimaryHandler::buildArticlePage()
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -341,6 +347,11 @@ void PrimaryHandler::processRequest()
     {
         VLOG(1) << "Process front page";
         buildFrontPage();
+    }
+    else if(path == "/archives")
+    {
+        VLOG(1) << "Process archive";
+        buildArchive();
     }
     else if(path.substr(0,9) == "/article/")
     {

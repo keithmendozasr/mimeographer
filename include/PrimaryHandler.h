@@ -45,8 +45,18 @@ class PrimaryHandler : public HandlerBase
     FRIEND_TEST(PrimaryHandlerTest, renderArticle_strong);
 
 private:
-    void buildFrontPage();
+
+    ////
+    /// Parse the markdown for sending in the response
+    /// \param data Markdown string to parse
+    ////
     void renderArticle(const std::string &data);
+
+    ////
+    /// Render the site's front/index page
+    ////
+    void buildFrontPage();
+    void buildArchive();
     void buildArticlePage();
     void processRequest();
 
