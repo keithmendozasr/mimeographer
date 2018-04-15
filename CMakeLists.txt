@@ -1,4 +1,6 @@
 cmake_minimum_required (VERSION 3.7)
+include(FindPkgConfig)
+
 project (mimeographer)
 enable_testing()
 
@@ -41,7 +43,9 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
     include_directories("${gtest_SOURCE_DIR}/include")
 endif()
 
-include_directories(include ${CMAKE_BINARY_DIR}/googletest-src/googletest/include)
+find_package(jsoncpp REQUIRED)
+pkg_check_modules (JSONCPP jsoncpp)
+include_directories(include ${CMAKE_BINARY_DIR}/googletest-src/googletest/include ${JSONCPP_INCLUDE_DIRS})
 add_subdirectory (src)
 add_subdirectory (tests)
 

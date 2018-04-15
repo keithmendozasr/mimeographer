@@ -23,7 +23,7 @@
 #include <proxygen/httpserver/RequestHandlerFactory.h>
 
 #include <cmark.h>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 
 #include "PrimaryHandler.h"
 #include "EditHandler.h"
