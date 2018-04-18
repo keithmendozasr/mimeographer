@@ -1,4 +1,5 @@
 # Mimeographer
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=mimeographer&metric=alert_status)](https://sonarcloud.io/dashboard?id=mimeographer)
 
 A content management system written on top of [Facebook's Proxygen](https://github.com/facebook/proxygen)
 
