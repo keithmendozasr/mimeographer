@@ -128,7 +128,8 @@ TEST_F(DBConnTest, getUserInfo_userid)
     const string login = "a@a.com";
     const int userid = 1;
     DBConn::UserRecord testData;
-    EXPECT_NO_THROW({ testData = testConn.getUserInfo(userid); });
+    //EXPECT_NO_THROW({ testData = testConn.getUserInfo(userid); });
+    testData = testConn.getUserInfo(userid);
     EXPECT_TRUE(testData);
     auto data = *testData;
 

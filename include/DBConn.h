@@ -96,6 +96,15 @@ private:
     std::unique_ptr<PGresult, PGresultCleaner> execQuery(
         const std::string &query, std::array<const char *, S> params) const;
 
+    ////
+    /// Build user info data structure
+    /// \param dbResult Query result to collect data from
+    /// \return UserRecord containing user information
+    ////
+    typedef boost::optional<std::tuple<int, std::string, std::string,
+        std::string, std::string>> UserRecord;
+    UserRecord buildUserRecord(std::unique_ptr<PGresult, PGresultCleaner> dbResult);
+
 public:
     ////
     /// Exception class for DBConn
@@ -144,8 +153,6 @@ public:
     /// Retrieve the user info stored from database, if found
     /// \param login User's login to find
     ////
-    typedef boost::optional<std::tuple<int, std::string, std::string,
-        std::string, std::string>> UserRecord;
     UserRecord getUserInfo(const std::string &email);
 
     ////

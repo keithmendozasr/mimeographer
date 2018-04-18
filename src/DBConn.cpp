@@ -107,6 +107,41 @@ unique_ptr<PGresult, DBConn::PGresultCleaner> DBConn::execQuery(
     return move(unique_ptr<PGresult, PGresultCleaner>(tmp));
 }
 
+DBConn::UserRecord DBConn::buildUserRecord(unique_ptr<PGresult, PGresultCleaner> dbResult)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    auto len = PQgetlength(dbResult.get(), 0, 0);
+    VLOG(3) <<  "userid length: " << len;
+    int userId = stoi(string(PQgetvalue(dbResult.get(), 0, 0), len));
+
+    len = PQgetlength(dbResult.get(), 0, 1);
+    VLOG(3) <<  "fullname length: " << len;
+    string fullname(PQgetvalue(dbResult.get(), 0, 1), len);
+
+    len = PQgetlength(dbResult.get(), 0, 2);
+    VLOG(3) <<  "email length: " << len;
+    string email(PQgetvalue(dbResult.get(), 0, 2), len);
+
+    len = PQgetlength(dbResult.get(), 0, 3);
+    VLOG(3) <<  "salt length: " << len;
+    string salt(PQgetvalue(dbResult.get(), 0, 3), len);
+
+    len = PQgetlength(dbResult.get(), 0, 4);
+    VLOG(3) <<  "password length: " << len;
+    string password(PQgetvalue(dbResult.get(), 0, 4), len);
+
+    VLOG(3) << "Record to return:"
+        << "id: \"" << userId
+        << "\"\nfullname: \"" << fullname
+        << "\"\nemail: \"" << email
+        << "\"\nsalt: \"" << salt
+        << "\"\npassword: \"" << password << "\"";
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return make_tuple(userId, fullname, email, salt, password);
+}
+
 DBConn::DBConn(const string &username, const string &password,
     const string &dbHost, const string &dbName, const unsigned short port)
 {
@@ -206,49 +241,22 @@ DBConn::UserRecord DBConn::getUserInfo(const std::string &email)
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
     const static string query =
-        "SELECT userid, fullname, salt, password "
+        "SELECT userid, fullname, email, salt, password "
         "FROM users WHERE email=$1 AND isactive";
+        
     auto dbResult = execQuery(query, array<const char *, 1>({ email.c_str() }));
     auto rsltCnt = PQntuples(dbResult.get());
+    UserRecord retVal = boost::none;
     if(rsltCnt == 0)
-    {
-        LOG(INFO) << "No account with email " << email << " found";
-        return boost::none;
-    }
+        LOG(WARNING) << "No account with email " << email << " found";
     else if(rsltCnt > 1)
-    {
         LOG(WARNING) << "Unexpected number of records found for " << email
             << ": " << rsltCnt;
-        return boost::none;
-    }
-
-    UserRecord rslt;
-    
-    auto len = PQgetlength(dbResult.get(), 0, 0);
-    VLOG(3) <<  "userid length: " << len;
-    int userid = stoi(string(PQgetvalue(dbResult.get(), 0, 0), len));
-
-    len = PQgetlength(dbResult.get(), 0, 1);
-    VLOG(3) <<  "fullname length: " << len;
-    string fullname(PQgetvalue(dbResult.get(), 0, 1), len);
-
-    len = PQgetlength(dbResult.get(), 0, 2);
-    VLOG(3) <<  "salt length: " << len;
-    string salt(PQgetvalue(dbResult.get(), 0, 2), len);
-
-    len = PQgetlength(dbResult.get(), 0, 3);
-    VLOG(3) <<  "password length: " << len;
-    string password(PQgetvalue(dbResult.get(), 0, 3), len);
-
-    VLOG(3) << "Record to return:"
-        << "id: \"" << userid
-        << "\"\nfullname: \"" << fullname
-        << "\"\nemail: \"" << email
-        << "\"\nsalt: \"" << salt
-        << "\"\npassword: \"" << password << "\"";
+    else
+        retVal = buildUserRecord(move(dbResult));
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
-    return make_tuple(userid, fullname, email, salt, password);
+    return retVal;
 }
 
 DBConn::UserRecord DBConn::getUserInfo(const int &userId)
@@ -256,51 +264,23 @@ DBConn::UserRecord DBConn::getUserInfo(const int &userId)
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
     const static string query =
-        "SELECT email, fullname, salt, password "
+        "SELECT userid, fullname, email, salt, password "
         "FROM users WHERE userid=$1 AND isactive";
     auto dbResult = execQuery(query,
         array<const char *, 1>({ to_string(userId).c_str() })
     );
     auto rsltCnt = PQntuples(dbResult.get());
+    UserRecord retVal = boost::none;
     if(rsltCnt == 0)
-    {
         LOG(WARNING) << "No account with user ID " << userId << " found";
-        return boost::none;
-    }
     else if(rsltCnt > 1)
-    {
         LOG(WARNING) << "Unexpected number of records found for " << userId
             << ": " << rsltCnt;
-        return boost::none;
-    }
-
-    UserRecord rslt;
-    
-    auto len = PQgetlength(dbResult.get(), 0, 0);
-    VLOG(3) <<  "email length: " << len;
-    string email(PQgetvalue(dbResult.get(), 0, 0), len);
-
-    len = PQgetlength(dbResult.get(), 0, 1);
-    VLOG(3) <<  "fullname length: " << len;
-    string fullname(PQgetvalue(dbResult.get(), 0, 1), len);
-
-    len = PQgetlength(dbResult.get(), 0, 2);
-    VLOG(3) <<  "salt length: " << len;
-    string salt(PQgetvalue(dbResult.get(), 0, 2), len);
-
-    len = PQgetlength(dbResult.get(), 0, 3);
-    VLOG(3) <<  "password length: " << len;
-    string password(PQgetvalue(dbResult.get(), 0, 3), len);
-
-    VLOG(3) << "Record to return:"
-        << "id: \"" << userId
-        << "\"\nfullname: \"" << fullname
-        << "\"\nemail: \"" << email
-        << "\"\nsalt: \"" << salt
-        << "\"\npassword: \"" << password << "\"";
+    else
+        retVal = buildUserRecord(move(dbResult));
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
-    return make_tuple(userId, fullname, email, salt, password);
+    return retVal;
 }
 
 void DBConn::saveSession(const string &uuid)
