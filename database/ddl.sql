@@ -7,19 +7,6 @@ CREATE TABLE IF NOT EXISTS users (
     isactive BOOL DEFAULT TRUE
 );
 
-CREATE TABLE IF NOT EXISTS permissions (
-    permissionid SMALLSERIAL PRIMARY KEY,
-    type VARCHAR(50) NOT NULL UNIQUE,
-    isactive BOOL DEFAULT TRUE
-);
-
-CREATE TABLE IF NOT EXISTS user_permissions (
-    userid INT NOT NULL REFERENCES users(userid),
-    permission SMALLINT NOT NULL REFERENCES permissions(permissionid)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY(userid,permission)
-);
-
 CREATE TABLE IF NOT EXISTS article (
     articleid SERIAL PRIMARY KEY,
     title VARCHAR(256) NOT NULL,
@@ -31,14 +18,6 @@ CREATE TABLE IF NOT EXISTS article (
     summary VARCHAR(256) NOT NULL
 );
 CREATE INDEX arcticle_publish_date ON article(publishdate);
-
-CREATE TABLE IF NOT EXISTS comments (
-    id INT NOT NULL PRIMARY KEY,
-    article INT NOT NULL REFERENCES article(articleid)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    content TEXT,
-    publishdate TIMESTAMP NOT NULL DEFAULT NOW()
-);
 
 CREATE TABLE IF NOT EXISTS session (
     sessionid UUID PRIMARY KEY,
