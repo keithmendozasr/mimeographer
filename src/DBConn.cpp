@@ -182,7 +182,7 @@ DBConn::headline DBConn::getHeadlines() const
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
     const static string query =
-        "SELECT articleid, title, preview"
+        "SELECT articleid, title, summary"
         " FROM article WHERE publishdate <= NOW()"
         " ORDER BY publishdate DESC";
     auto dbResult = execQuery(query);
@@ -205,11 +205,11 @@ DBConn::headline DBConn::getHeadlines() const
         VLOG(3) << "Title: " << title;
 
         len = PQgetlength(dbResult.get(), i, 2);
-        VLOG(3) << "Preview length at row " << i << ": " << len;
-        string preview = string(PQgetvalue(dbResult.get(), i, 2), len);
-        VLOG(3) << "Preview: " << preview;
+        VLOG(3) << "Summary length at row " << i << ": " << len;
+        string summary = string(PQgetvalue(dbResult.get(), i, 2), len);
+        VLOG(3) << "Summary: " << summary;
 
-        retVal.push_back(make_tuple(id, title, preview));
+        retVal.push_back(make_tuple(id, title, summary));
     }
 
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
@@ -399,17 +399,17 @@ boost::optional<const string> DBConn::getCSRFKey(const int &userId, const string
 }
 
 const int DBConn::saveArticle(const int &userId, const string &title,
-    const string &preview, const string &markdown)
+    const string &summary, const string &markdown)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
-    const string query = "INSERT INTO article(userid, title, preview, content) "
+    const string query = "INSERT INTO article(userid, title, summary, content) "
         "VALUES($1, $2, $3, $4) RETURNING articleid";
     auto dbRslt = execQuery(query,
         array<const char *, 4>({
             to_string(userId).c_str(),
             title.c_str(),
-            preview.c_str(),
+            summary.c_str(),
             markdown.c_str()
         })
     );
@@ -426,17 +426,17 @@ const int DBConn::saveArticle(const int &userId, const string &title,
 }
 
 void DBConn::updateArticle(const int &userId, const string &title,
-    const string &preview, const string &markdown, const string &articleId)
+    const string &summary, const string &markdown, const string &articleId)
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
     const string query = "UPDATE article SET userid = $1, title = $2, "
-        "preview = $3, content = $4, savedate = NOW() WHERE articleid = $5";
+        "summary = $3, content = $4, savedate = NOW() WHERE articleid = $5";
     execQuery(query,
         array<const char *, 5>({
             to_string(userId).c_str(),
             title.c_str(),
-            preview.c_str(),
+            summary.c_str(),
             markdown.c_str(),
             articleId.c_str()
         })
