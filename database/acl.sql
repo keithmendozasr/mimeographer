@@ -9,3 +9,6 @@ GRANT DELETE ON user_session
 
 GRANT USAGE ON article_articleid_seq
     TO mimeographer_webserver;
+
+GRANT USAGE ON users_userid_seq
+    TO mimeographer_webserver;

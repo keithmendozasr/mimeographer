@@ -194,4 +194,15 @@ TEST_F(DBConnTest, getLatestArticle)
     });
 }
 
+TEST_F(DBConnTest, addUser)
+{
+    ASSERT_NO_THROW({
+        testConn.execQuery("DELETE FROM users WHERE email = 'unittest@example.com'");
+    });
+
+    EXPECT_NO_THROW({
+        testConn.addUser("unittest@example.com", "123456", "123456", "Unit Test");
+    });
+}
+
 } //namespace mimeographer

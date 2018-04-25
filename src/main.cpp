@@ -44,6 +44,7 @@ using Protocol = HTTPServer::Protocol;
 DEFINE_int32(threads, 0, "Number of threads to listen on. Numbers <= 0 "
              "will use the number of cores on this machine.");
 DEFINE_string(config, "/etc/mimeographer/mimeographer.cfg", "Configuration file");
+DEFINE_bool(adduser, false, "Add a new user");
 
 namespace mimeographer 
 {
@@ -109,7 +110,6 @@ int main(int argc, char* argv[])
     //folly::init calls google log init stuff for us
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
-
     VLOG(3) << "Value of cmark_version: " << cmark_version();
     if(cmark_version() < ((0<<16) | (28 << 8) | 0)) 
         LOG(WARNING) << "cmark version is " << cmark_version_string()
@@ -148,6 +148,53 @@ int main(int argc, char* argv[])
         cfgRoot.get("hostName", "localhost").asString(),
         cfgRoot.get("staticBase", "/var/lib/mimeographer").asString()
     );
+
+    if(FLAGS_adduser)
+    {
+        LOG(INFO) << "Running in add user mode";
+        string email, fullname, password, passConfirm;
+
+        cout << "Enter user's email: ";
+        getline(cin, email);
+
+        cout << "Enter user's full name: ";
+        getline(cin, fullname);
+
+        do
+        {
+            cout << "Enter user's password: ";
+            getline(cin, password);
+
+            cout << "Renter password: ";
+            getline(cin, passConfirm);
+
+            if(password != passConfirm)
+                cout << "Password mismatch" << endl;
+        }while(password != passConfirm);
+
+        VLOG(3) << "Email: " << email
+            << "\nPassord: NOT PRINTING"
+            << "\nFull name: " << fullname;
+
+        LOG(INFO) << "Adding " << email << " to database";
+
+        DBConn db(config.dbUser, config.dbPass, config.dbHost,
+            config.dbName, config.dbPort);
+        UserSession s(db);
+        int exitCode = 0;
+
+        if(s.createLogin(email, password, fullname))
+            cout << "User added" << endl;
+        else
+        {
+            cout << "Failed to add user" << endl;
+            exitCode = 1;
+        }
+
+        return exitCode;
+    }
+    else
+        VLOG(1) << "Running as server";
 
     auto sslCert = cfgRoot.get("sslcert", "/etc/mimeographer/mimeographer.pem").
         asString();

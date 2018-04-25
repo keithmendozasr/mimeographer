@@ -483,4 +483,22 @@ const string DBConn::getLatestArticle() const
     return move(content);
 }
 
+void DBConn::addUser(const string &email, const string &newPass,
+    const string &newSalt, const string &name)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    const string query = "INSERT INTO users(email, password, salt, fullname) "
+        "VALUES ($1, $2, $3, $4)";
+    execQuery(query,
+        array<const char *, 4>({
+            email.c_str(),
+            newPass.c_str(),
+            newSalt.c_str(),
+            name.c_str()
+        })
+    );
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
 } // namespace

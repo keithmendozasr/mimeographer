@@ -49,6 +49,8 @@ protected:
         {
             db.savePassword(1, "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U",
                 "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+            db.execQuery("DELETE FROM users "
+                "WHERE email in ('newuser@example.com', 'newuse2r@example.com')");
         }
         catch(...)
         {
@@ -139,6 +141,14 @@ TEST_F(UserSessionTest, changeUserPassword)
     obj.userId = 5;
     EXPECT_NO_THROW({ EXPECT_FALSE(obj.changeUserPassword("", "")); });
     obj.changeUserPassword("", "123456");
+}
+
+TEST_F(UserSessionTest, createLogin)
+{
+    UserSession obj(db);
+    EXPECT_TRUE(obj.createLogin("newuser@example.com", "123456", "New User"));
+    EXPECT_FALSE(obj.createLogin("newuser@example.com", "123456", "New User"));
+    EXPECT_TRUE(obj.createLogin("newuse2r@example.com", "123456", "New User"));
 }
 
 } //namespace

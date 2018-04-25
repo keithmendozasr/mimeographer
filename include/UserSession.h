@@ -45,7 +45,7 @@ private:
 
     ////
     /// Generate salted password hash
-    /// \return tuple of the salted password hash, and the hash used
+    /// \return tuple of the salted password hash, and the salt used
     ////
     std::tuple<std::string, std::string>
         hashPassword(const std::string &pass, std::string salt = "");
@@ -124,6 +124,15 @@ public:
     ////
     bool changeUserPassword(const std::string &oldPass,
         const std::string &newPass);
+
+    ////
+    /// Create login credential
+    /// \param email User's email
+    /// \param password Cleartext password
+    /// \return true if email/password saved
+    ////
+    const bool createLogin(const std::string &email, const std::string &password,
+        const std::string &name);
 };
 
 } // namespace

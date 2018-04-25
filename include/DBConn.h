@@ -39,6 +39,7 @@ class DBConn
     FRIEND_TEST(DBConnTest, splitString);
     FRIEND_TEST(DBConnTest, getUserInfo_email);
     FRIEND_TEST(DBConnTest, getUserInfo_userid);
+    FRIEND_TEST(DBConnTest, addUser);
     
     friend class UserSessionTest;
 
@@ -243,6 +244,15 @@ public:
     /// Get the latest article
     ////
     const std::string getLatestArticle() const;
+
+    ////
+    /// Save new user's information
+    /// \param email User's email
+    /// \param newPass New password hash
+    /// \param newSalt New salt
+    /// \param name User's full name
+    void addUser(const std::string &email, const std::string &newPass,
+        const std::string &newSalt, const std::string &name);
 };
 
 }

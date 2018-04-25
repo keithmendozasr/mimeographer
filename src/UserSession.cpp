@@ -258,4 +258,29 @@ bool UserSession::changeUserPassword(const string &oldPass,
     return true;
 }
 
+const bool UserSession::createLogin(const string &email, const string &password,
+    const string &name)
+{
+    VLOG(1) << "Start " << __PRETTY_FUNCTION__;
+
+    bool rslt = false;
+    auto dbRet = db.getUserInfo(email);
+    if(dbRet)
+        LOG(INFO) << "Email already in database";
+    else
+    {
+        VLOG(1) << "Email not in DB";
+        auto hash = hashPassword(password);
+        VLOG(3) << "Pass hash: " << get<0>(hash)
+            << " Salt: " << get<1>(hash);
+        VLOG(1) << "Saving new user to database";
+        db.addUser(email, get<0>(hash), get<1>(hash), name);
+
+        rslt = true;
+    }
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return rslt;
+}
+
 } // namespace
