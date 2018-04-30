@@ -11,5 +11,22 @@ target_link_libraries(unit_test folly proxygenlib proxygenhttpserver gtest glog
     pq gflags uuid crypto cmark boost_filesystem boost_system)
 
 message("Set DB user/password for testing")
-add_test(unit_test unit_test --dbUser= --dbPass=
-    --dbName=mimeographer_unit_test --staticBase=../../staticfiles)
+set(dbuser "")
+set(dbpass "")
+set(dbname "mimeographer_unit_test")
+add_test(DBConn unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=DBConnTest.*)
+add_test(HandlerBase unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=HandlerBaseTest.*)
+add_test(UserSession unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=UserSessionTest.*)
+add_test(SummaryBuilder unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=SummaryBuilderTest.*)
+add_test(StaticHandler unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=StaticHandlerTest.*)
+add_test(PrimaryHandler unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=PrimaryHandlerTest.*)
+add_test(UserHandler unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=UserHandlerTest.*)
+add_test(SiteTemplate unit_test --dbUser=${dbuser} --dbPass=${dbpass}
+    --dbName=${dbname} --staticBase=../../staticfiles --gtest_filter=SiteTemplateTest.*)
