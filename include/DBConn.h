@@ -40,8 +40,22 @@ class DBConn
     FRIEND_TEST(DBConnTest, getUserInfo_email);
     FRIEND_TEST(DBConnTest, getUserInfo_userid);
     FRIEND_TEST(DBConnTest, addUser);
-    
+
     friend class UserSessionTest;
+    friend class UserHandlerTest;
+    friend class DBConnTest;
+public:
+    ////
+    /// Typedef for user information
+    /// Fields:
+    ///     userid
+    ///     full name
+    ///     email
+    ///     salt
+    ///     password salted hash
+    ////
+    typedef boost::optional<std::tuple<int, std::string, std::string,
+        std::string, std::string>> UserRecord;
 
 private:
     // This is here for the unit tester
@@ -102,8 +116,6 @@ private:
     /// \param dbResult Query result to collect data from
     /// \return UserRecord containing user information
     ////
-    typedef boost::optional<std::tuple<int, std::string, std::string,
-        std::string, std::string>> UserRecord;
     UserRecord buildUserRecord(std::unique_ptr<PGresult, PGresultCleaner> dbResult);
 
 public:

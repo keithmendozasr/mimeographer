@@ -43,20 +43,6 @@ protected:
         }
     }
 
-    void SetUp()
-    {
-        try
-        {
-            db.savePassword(1, "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U",
-                "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
-            db.execQuery("DELETE FROM users "
-                "WHERE email in ('newuser@example.com', 'newuse2r@example.com')");
-        }
-        catch(...)
-        {
-            LOG(WARNING) << "Exception encountered at " << __PRETTY_FUNCTION__;
-        }
-    }
 };
 
 TEST_F(UserSessionTest, constructor)
@@ -75,39 +61,6 @@ TEST_F(UserSessionTest, initSession)
     });
 }
 
-TEST_F(UserSessionTest, hashPassword)
-{
-    UserSession obj(db);
-    auto salt = "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow";
-    auto ret = obj.hashPassword("123456", salt);
-    auto hashTest = get<0>(ret);
-    auto saltTest = get<1>(ret);
-    EXPECT_EQ(hashTest, string("ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U"));
-    EXPECT_EQ(saltTest, salt);
-}
-
-TEST_F(UserSessionTest, authenticateLogin)
-{
-    ASSERT_NO_THROW({
-        UserSession obj(db);
-        obj.initSession(testUUID);
-        EXPECT_TRUE(obj.authenticateLogin("a@a.com", "123456"));
-        EXPECT_EQ(obj.userId.value(), 1);
-    });
-
-    EXPECT_NO_THROW({
-        UserSession obj(db);
-        EXPECT_FALSE(obj.authenticateLogin("blank@example.com", "123456"));
-        EXPECT_FALSE(obj.userId);
-    });
-
-    EXPECT_NO_THROW({
-        UserSession obj(db);
-        EXPECT_FALSE(obj.authenticateLogin("a@a.com", "9876"));
-        EXPECT_FALSE(obj.userId);
-    });
-}
-
 TEST_F(UserSessionTest, userAuthenticated)
 {
     {
@@ -116,39 +69,14 @@ TEST_F(UserSessionTest, userAuthenticated)
         UserSession obj(db);
         obj.initSession(testUUID);
         EXPECT_FALSE(obj.userAuthenticated());
-        obj.authenticateLogin("a@a.com", "123456");
-        EXPECT_TRUE(obj.userAuthenticated());
     }
 
     {
+        db.mapUuidToUser(testUUID, 1);
         UserSession obj(db);
         obj.initSession(testUUID);
         EXPECT_TRUE(obj.userAuthenticated());
     }
-}
-
-TEST_F(UserSessionTest, changeUserPassword)
-{
-    UserSession obj(db);
-    EXPECT_THROW({ obj.changeUserPassword("",""); }, invalid_argument);
-
-    obj.userId = 1;
-    EXPECT_NO_THROW({
-        EXPECT_FALSE(obj.changeUserPassword("9876", "abcdef"));
-        ASSERT_TRUE(obj.changeUserPassword("123456", "abcdef"));
-    });
-
-    obj.userId = 5;
-    EXPECT_NO_THROW({ EXPECT_FALSE(obj.changeUserPassword("", "")); });
-    obj.changeUserPassword("", "123456");
-}
-
-TEST_F(UserSessionTest, createLogin)
-{
-    UserSession obj(db);
-    EXPECT_TRUE(obj.createLogin("newuser@example.com", "123456", "New User"));
-    EXPECT_FALSE(obj.createLogin("newuser@example.com", "123456", "New User"));
-    EXPECT_TRUE(obj.createLogin("newuse2r@example.com", "123456", "New User"));
 }
 
 } //namespace

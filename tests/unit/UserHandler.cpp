@@ -30,22 +30,54 @@ namespace mimeographer
 class UserHandlerTest : public ::testing::Test
 {
 protected:
+    // DBConn db; // = { FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbHost, FLAGS_dbName };
     Config config;
+    DBConn db;
     UserHandlerTest() :
         config(FLAGS_dbHost, FLAGS_dbUser, FLAGS_dbPass, FLAGS_dbName,
-            FLAGS_dbPort, "/tmp", "localhost", "/tmp")
+            FLAGS_dbPort, "/tmp", "localhost", "/tmp"),
+        db(config.dbUser, config.dbPass, config.dbHost, config.dbName,
+            config.dbPort)
     {}
 
     void SetUp()
     {
         ASSERT_NO_THROW({
-            DBConn db(config.dbUser, config.dbPass, config.dbHost, config.dbName,
-                config.dbPort);
             db.savePassword(1, "ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U",
                 "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow");
+            db.execQuery("DELETE FROM users "
+                "WHERE email in ('newuser@example.com', 'newuse2r@example.com')");
         });
     }
 };
+
+TEST_F(UserHandlerTest, hashPassword)
+{
+    UserHandler obj(config);
+    auto salt = "VEOCBE1i2wM2tsrGwmLfsg8d74fv7M-AxsngFVcv2ow";
+    auto ret = obj.hashPassword("123456", salt);
+    auto hashTest = get<0>(ret);
+    auto saltTest = get<1>(ret);
+    EXPECT_EQ(hashTest, string("ko8hPecckl3hX4Exh7f3-sqvqJBVaLzH4thFE-vNU4U"));
+    EXPECT_EQ(saltTest, salt);
+}
+
+TEST_F(UserHandlerTest, authenticateLogin)
+{
+    EXPECT_NO_THROW({
+        UserHandler obj(config);
+        EXPECT_TRUE(
+            obj.authenticateLogin(*(db.getUserInfo("a@a.com")), "123456")
+        );
+    });
+
+    EXPECT_NO_THROW({
+        UserHandler obj(config);
+        EXPECT_FALSE(obj.authenticateLogin(*(db.getUserInfo("a@a.com")),
+            "9876")
+        );
+    });
+}
 
 TEST_F(UserHandlerTest, buildLoginPage)
 {
@@ -104,7 +136,31 @@ TEST_F(UserHandlerTest, processLogin)
         "0987"
     };
 
-    EXPECT_NO_THROW(obj.processLogin());
+    EXPECT_NO_THROW( { obj.processLogin(); } );
+}
+
+TEST_F(UserHandlerTest, changeUserPassword)
+{
+    UserHandler obj(config);
+    EXPECT_THROW({ obj.changeUserPassword("",""); }, invalid_argument);
+
+    EXPECT_NO_THROW({
+        obj.session.userId = 1;
+        EXPECT_FALSE(obj.changeUserPassword("9876", "abcdef"));
+        ASSERT_TRUE(obj.changeUserPassword("123456", "abcdef"));
+    });
+
+    obj.session.userId = 5;
+    EXPECT_NO_THROW({ EXPECT_FALSE(obj.changeUserPassword("", "")); });
+    obj.changeUserPassword("", "123456");
+}
+
+TEST_F(UserHandlerTest, createLogin)
+{
+    UserHandler obj(config);
+    EXPECT_TRUE(obj.createLogin("newuser@example.com", "123456", "New User"));
+    EXPECT_FALSE(obj.createLogin("newuser@example.com", "123456", "New User"));
+    EXPECT_TRUE(obj.createLogin("newuse2r@example.com", "123456", "New User"));
 }
 
 } // namespace mimeographer

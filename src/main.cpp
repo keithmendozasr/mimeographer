@@ -178,12 +178,10 @@ int main(int argc, char* argv[])
 
         LOG(INFO) << "Adding " << email << " to database";
 
-        DBConn db(config.dbUser, config.dbPass, config.dbHost,
-            config.dbName, config.dbPort);
-        UserSession s(db);
+        UserHandler u(config);
         int exitCode = 0;
 
-        if(s.createLogin(email, password, fullname))
+        if(u.createLogin(email, password, fullname))
             cout << "User added" << endl;
         else
         {

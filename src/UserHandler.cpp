@@ -20,6 +20,8 @@
 #include <glog/logging.h>
 
 #include <folly/io/IOBuf.h>
+#include <proxygen/lib/utils/Base64.h>
+#include <folly/ssl/OpenSSLHash.h>
 
 #include <boost/filesystem.hpp>
 
@@ -30,9 +32,77 @@
 using namespace std;
 using namespace proxygen;
 using namespace folly;
+using namespace folly::ssl;
 
 namespace mimeographer 
 {
+
+tuple<string,string> UserHandler::hashPassword(const string &pass,
+    string salt)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    string useSalt;
+    if(salt == "")
+    {
+        VLOG(1) << "Generating new salt";
+        ifstream rndFile("/dev/urandom", ios_base::in | ios_base::binary);
+        if(!rndFile)
+        {
+            auto err = errno;
+
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
+            throw runtime_error(
+                string("Failed to open /dev/random. Cause: ") + strerror(err)
+            );
+        }
+
+        VLOG(3) << "/dev/urandom open";
+        unsigned char rndBuf[32];
+        rndFile.read((char *)rndBuf, 32);
+        if(!rndFile)
+        {
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
+            throw runtime_error("Failed to read from /dev/urandom");
+        }
+
+        VLOG(1) << "BASE64 encode seed";
+        salt = Base64::urlEncode(ByteRange(rndBuf, 32));
+    }
+    else
+        VLOG(1) << "Use existing salt";
+
+    VLOG(1) << "Calculate hash.";
+    auto saltedPass = salt + pass;
+    unsigned char hash[32];
+    OpenSSLHash::sha256(MutableByteRange(hash, 32), ByteRange((unsigned char *)saltedPass.c_str(), (size_t)saltedPass.size()));
+    string hashStr = Base64::urlEncode(ByteRange(hash, 32));
+    VLOG(2) << "sha256 output: " << hashStr;
+    
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return move(make_tuple(hashStr, salt));
+}
+
+const bool UserHandler::authenticateLogin(const DBConn::UserRecord &userInfo,
+    const string &password)
+{
+    bool rslt = false;
+    auto hash = hashPassword(password, get<3>(*userInfo));
+    auto savePass = get<0>(hash);
+    auto expectPass = get<4>(*userInfo);
+
+    VLOG(3) << "Save pass: " << savePass << "\n"
+        << "expectPass: " << expectPass;
+    if(savePass != expectPass)
+        LOG(INFO) << "Password mismatch";
+    else
+    {   
+        LOG(INFO) << "User authenticated";
+        rslt = true;
+    }
+
+    return rslt;
+}
 
 void UserHandler::buildLoginPage(const bool &showMismatch)
 {
@@ -73,8 +143,8 @@ void UserHandler::processLogin()
 
     auto login = getPostParam("login");
     auto pass = getPostParam("password");
-    if(login && pass && 
-        login->type == PostParamType::VALUE && pass->type == PostParamType::VALUE)
+    if(login && pass && login->type == PostParamType::VALUE &&
+        pass->type == PostParamType::VALUE)
     {
         VLOG(3) << "Login credentials supplied"
             << "\n\tLogin: " << login->value
@@ -82,14 +152,23 @@ void UserHandler::processLogin()
             << "\n\tUUID from cookie: " << session.getUUID();
 
         VLOG(1) << "Check provided credential";
-        if(session.authenticateLogin(login->value, pass->value))
+        auto dbRet = db.getUserInfo(login->value);
+        if(dbRet)
         {
-            LOG(INFO) << "Login authenticated";
-            addCookie(cookieName, session.getUUID());
-            throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/");
+            VLOG(1) << "User info retrieved from DB";
+            if(authenticateLogin(*dbRet, pass->value))
+            {
+                LOG(INFO) << "Login authenticated";
+                db.mapUuidToUser(session.getUUID(), get<0>(*dbRet));
+                addCookie(cookieName, session.getUUID());
+                VLOG(2) << "End " << __PRETTY_FUNCTION__;
+                throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/");
+            }
+            else
+                LOG(INFO) << "User authentication failed";
         }
         else
-            LOG(INFO) << "Login rejected";
+            LOG(INFO) << "User info not found";
     }
     else
         LOG(WARNING) << "POST missing login credential"; 
@@ -148,6 +227,52 @@ void UserHandler::buildChangePassPage(const bool &showMismatch)
     VLOG(2) << "End " << __PRETTY_FUNCTION__;
 }
 
+bool UserHandler::changeUserPassword(const string &oldPass,
+    const string &newPass)
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    int userId;
+    {
+        auto tmp = session.getUserId();
+        if(tmp == boost::none)
+        {
+            VLOG(2) << "End " << __PRETTY_FUNCTION__;
+            throw invalid_argument("User ID not initialized, can't store new password");
+        }
+        userId = *tmp;
+    }
+
+    auto userInfo = db.getUserInfo(userId);
+    if(userInfo == boost::none)
+    {
+        LOG(WARNING) << "User info for ID " << userId << " not found";
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        return false;
+    }
+    else
+        VLOG(1) << "User info for " << userId << " found";
+
+    if(!authenticateLogin(userInfo, oldPass))
+    {
+        LOG(INFO) << "Failed to authenticate user " << userId
+            << "'s current password";
+        VLOG(2) << "End " << __PRETTY_FUNCTION__;
+        return false;
+    }
+    else
+        VLOG(1) << "User " << userId << "'s current password validated";
+
+    string newHash, newSalt;
+    tie(newHash, newSalt) = hashPassword(newPass);
+    VLOG(1) << "New hash: " << newHash;
+    VLOG(1) << "New salt: " << newSalt;
+
+    db.savePassword(userId, newHash, newSalt);
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return true;
+}
+
 void UserHandler::processChangePass()
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -162,7 +287,7 @@ void UserHandler::processChangePass()
         newPass->value == repeatPass->value)
     {
         VLOG(1) << "Attempt password change";
-        if(session.changeUserPassword(oldPass->value, newPass->value))
+        if(changeUserPassword(oldPass->value, newPass->value))
         {
             LOG(INFO) << "Password changed";
             throw HandlerRedirect(HandlerRedirect::RedirCode::HTTP_303, "/");
@@ -247,6 +372,31 @@ void UserHandler::processRequest()
     }
 
     VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
+}
+
+const bool UserHandler::createLogin(const string &email, const string &password,
+    const string &name)
+{
+    VLOG(1) << "Start " << __PRETTY_FUNCTION__;
+
+    bool rslt = false;
+    auto dbRet = db.getUserInfo(email);
+    if(dbRet)
+        LOG(INFO) << "Email already in database";
+    else
+    {
+        VLOG(1) << "Email not in DB";
+        auto hash = hashPassword(password);
+        VLOG(3) << "Pass hash: " << get<0>(hash)
+            << " Salt: " << get<1>(hash);
+        VLOG(1) << "Saving new user to database";
+        db.addUser(email, get<0>(hash), get<1>(hash), name);
+
+        rslt = true;
+    }
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+    return rslt;
 }
 
 }

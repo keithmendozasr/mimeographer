@@ -31,11 +31,10 @@ class UserSession
 {
     FRIEND_TEST(UserSessionTest, constructor);
     FRIEND_TEST(UserSessionTest, initSession);
-    FRIEND_TEST(UserSessionTest, hashPassword);
-    FRIEND_TEST(UserSessionTest, authenticateLogin);
-    FRIEND_TEST(UserSessionTest, changeUserPassword);
 
     FRIEND_TEST(HandlerBaseTest, buildPageHeader);
+
+    FRIEND_TEST(UserHandlerTest, changeUserPassword);
 
 private:
     DBConn &db;
@@ -43,12 +42,6 @@ private:
     boost::optional<int> userId;
     std::string csrfkey;
 
-    ////
-    /// Generate salted password hash
-    /// \return tuple of the salted password hash, and the salt used
-    ////
-    std::tuple<std::string, std::string>
-        hashPassword(const std::string &pass, std::string salt = "");
 
     inline const std::string genUUID() const
     {
@@ -78,14 +71,6 @@ public:
         return userId;
     }
 
-    ////
-    /// Verify login credential
-    /// \param email User's email
-    /// \param password Cleartext password
-    /// \return true if email/password combination matches
-    ////
-    const bool authenticateLogin(const std::string &email,
-        const std::string &password);
 
     ////
     /// Check if the user's session is for an authenticated user
@@ -116,23 +101,6 @@ public:
         userId = boost::none;
     }
 
-    ////
-    /// Change user's password
-    /// \param oldPass User's current password
-    /// \param newPass User's new password
-    /// \return true if oldPass authenticated, and the new password was saved
-    ////
-    bool changeUserPassword(const std::string &oldPass,
-        const std::string &newPass);
-
-    ////
-    /// Create login credential
-    /// \param email User's email
-    /// \param password Cleartext password
-    /// \return true if email/password saved
-    ////
-    const bool createLogin(const std::string &email, const std::string &password,
-        const std::string &name);
 };
 
 } // namespace
