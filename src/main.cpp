@@ -25,6 +25,7 @@
 #include <cmark.h>
 #include <json/json.h>
 
+#include "mm_version.h"
 #include "PrimaryHandler.h"
 #include "EditHandler.h"
 #include "StaticHandler.h"
@@ -105,6 +106,8 @@ public:
 
 int main(int argc, char* argv[]) 
 {
+    // So that --version from gflags will print the correct version info
+    google::SetVersionString(version());
     folly::init(&argc, &argv, true);
 
     //folly::init calls google log init stuff for us
@@ -241,6 +244,8 @@ int main(int argc, char* argv[])
 
     HTTPServer server(std::move(options));
     server.bind(IPs);
+
+    LOG(INFO) << "Mimeographer " << version() << " started";
 
     // Start HTTPServer mainloop in a separate thread
     std::thread t([&] () { server.start(); });

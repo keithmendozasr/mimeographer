@@ -1,0 +1,15 @@
+#pragma once
+
+#include <string>
+
+using namespace std;
+
+namespace mimeographer
+{
+
+const inline string version()
+{
+    return "@PROJECT_VERSION@";
+}
+
+} //namespace

@@ -1,8 +1,9 @@
 cmake_minimum_required (VERSION 3.7)
 include(FindPkgConfig)
 
-project (mimeographer)
+project (mimeographer VERSION 0.1.0.0)
 enable_testing()
+configure_file(include/mm_version.h.in ${CMAKE_BINARY_DIR}/include/mm_version.h)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -45,7 +46,9 @@ endif()
 
 find_package(jsoncpp REQUIRED)
 pkg_check_modules (JSONCPP jsoncpp)
-include_directories(include ${CMAKE_BINARY_DIR}/googletest-src/googletest/include ${JSONCPP_INCLUDE_DIRS})
+include_directories(include ${CMAKE_BINARY_DIR}/include
+    ${CMAKE_BINARY_DIR}/googletest-src/googletest/include
+    ${JSONCPP_INCLUDE_DIRS})
 add_subdirectory (src)
 add_subdirectory (tests)
 
