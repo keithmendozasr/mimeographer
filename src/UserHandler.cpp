@@ -304,6 +304,62 @@ void UserHandler::processChangePass()
     VLOG(2) << "End " <<  __PRETTY_FUNCTION__;
 }
 
+void UserHandler::buildAddUserPage()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+    const static string html = 
+        "<form method=\"post\" action=\"/user/add\" "
+            "enctype=\"multipart/form-data\" class=\"form-signin\" "
+            "style=\"max-width:330px; margin:0 auto\">\n"
+        "<h2 class=\"form-signin-heading\">Add New User</h2>\n"
+        "<label for=\"fullname\">Full name</label>\n"
+        "<input type=\"text\" name=\"fullname\" id=\"fullname\" "
+            "class=\"form-control\" required autofocus>\n"
+        "<label for=\"email\">Email</label>\n"
+        "<input type=\"text\" name=\"email\" id=\"email\" "
+            "class=\"form-control\" required autofocus>\n"
+        "<label for=\"newPass\">New Password</label>\n"
+        "<input type=\"password\" name=\"newpass\" id=\"newPass\" "
+            "class=\"form-control\" required>\n"
+        "<label for=\"repeatPass\">Repeat Password</label>\n"
+        "<input type=\"password\" name=\"repeatpass\" id=\"repeatPass\" "
+            "class=\"form-control\" required>\n"
+        "<button class=\"btn btn-lg btn-primary btn-block\" type=\"submit\">"
+            "Save"
+        "</button>\n"
+        "</form>\n";
+
+    prependResponse(html);
+
+    VLOG(2) << "End " << __PRETTY_FUNCTION__;
+}
+
+void UserHandler::processAddUser()
+{
+    VLOG(2) << "Start " << __PRETTY_FUNCTION__;
+
+    auto fullName = getPostParam("fullname");
+    auto email = getPostParam("email");
+    auto newPass = getPostParam("newpass");
+    if(fullName && email && newPass &&
+        fullName->type == PostParamType::VALUE &&
+        email->type == PostParamType::VALUE &&
+        newPass->type == PostParamType::VALUE)
+    {
+        VLOG(1) << "Adding new user with email " << email->value;
+        if(!createLogin(email->value, newPass->value, fullName->value))
+            throw HandlerError(200, "Provided email already exists");
+    }
+    else
+    {
+        LOG(WARNING) << "POST missing data";
+        throw HandlerError(400, "POST missing data");
+    }
+
+    LOG(INFO) << "User " << email->value << " added";
+    prependResponse("User added");
+}
+
 void UserHandler::processRequest() 
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
@@ -361,6 +417,13 @@ void UserHandler::processRequest()
                 buildChangePassPage();
             else if(getMethod() == "POST")
                 processChangePass();
+        }
+        else if(path == "/user/add")
+        {
+            if(getMethod() == "GET")
+                buildAddUserPage();
+            else if(getMethod() == "POST")
+                processAddUser();
         }
         else
         {

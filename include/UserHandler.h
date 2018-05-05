@@ -76,6 +76,10 @@ private:
 
     void processChangePass();
 
+    void buildAddUserPage();
+
+    void processAddUser();
+
 public:
     UserHandler(const Config &config) : HandlerBase(config) {}
 
