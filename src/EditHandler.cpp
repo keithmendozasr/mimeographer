@@ -193,7 +193,7 @@ void EditHandler::buildEditSelect()
              "<div class=\"col\"><a href=\"/edit/article/"
                 << get<0>(article) << + "\">" << get<1>(article) << "</a></div>\n"
             << "<div class=\"col-11\">" << get<2>(article) << "</div>\n</div>\n";
-        if((data.capacity() - data.size() - line.str().size()) < 0)
+        if((data.capacity() - data.size()) < line.str().size())
         {
             VLOG(2) << "Loading existing list to buffer";
             prependResponse(data);

@@ -156,6 +156,7 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
     string contentType;
     try
     {
+        // coverity[fun_call_w_exception]
         static regex parser("/(static|uploads)/(.+)");
         smatch match;
         string path = parsePath(headers->getPath());
@@ -192,6 +193,7 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
     }
     catch (const std::system_error& ex) 
     {
+        // coverity[fun_call_w_exception]
         LOG(WARNING) << "Error encountered opening file " << fileName
             << ". Cause: " << folly::to<string>(folly::exceptionStr(ex));
 
@@ -231,7 +233,8 @@ void StaticHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         VLOG(2) << "End " << __PRETTY_FUNCTION__;
         return;
     }
-
+ 
+    // coverity[fun_call_w_exception]
     ResponseBuilder(downstream_)
         .status(200, "Ok")
         .header(HTTP_HEADER_CONTENT_TYPE, contentType)

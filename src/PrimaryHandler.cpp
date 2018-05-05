@@ -248,7 +248,7 @@ void PrimaryHandler::renderArticle(const string &data)
 
         VLOG(3) << "Chunk to apend: \"" << chunk.str() << "\"";
 
-        if((body.capacity() - body.size() - chunk.str().size()) < 0)
+        if((body.capacity() - body.size()) < chunk.str().size())
         {
             VLOG(2) << "Loading existing chunk to buffer";
             prependResponse(body);
@@ -286,7 +286,7 @@ void PrimaryHandler::buildArchive()
             << get<1>(article) << "</a></h1>\n<div class=\"col col-12\" >"
             << get<2>(article) << "\n</div>\n";
 
-        if((data.capacity() - data.size() - line.str().size()) < 0)
+        if((data.capacity() - data.size()) < line.str().size())
         {
             VLOG(2) << "Loading existing list to buffer";
             prependResponse(data);

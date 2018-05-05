@@ -217,6 +217,7 @@ void HandlerBase::onRequest(unique_ptr<HTTPMessage> headers) noexcept
 {
     VLOG(2) << "Start " << __PRETTY_FUNCTION__;
 
+    // coverity[fun_call_w_exception]
     LOG(INFO) << "Handling request from " 
         << headers->getClientIP() << ":"
         << headers->getClientPort()
@@ -388,6 +389,8 @@ void HandlerBase::onEOM() noexcept
         );
 
         VLOG(1) << "Send response";
+
+        // coverity[fun_call_w_exception]
         builder.status(500, "Internal error")
             .header(HTTP_HEADER_CONTENT_TYPE, "text/html")
             .header(HTTP_HEADER_X_XSS_PROTECTION, "1; mode=block")
